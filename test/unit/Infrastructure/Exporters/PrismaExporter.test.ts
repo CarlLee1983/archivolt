@@ -50,38 +50,78 @@ describe('PrismaExporter', () => {
     expect(exporter.label).toBe('Prisma Schema')
   })
 
+  it('returns ExportResult with schema.prisma file', () => {
+    const result = exporter.export(model)
+    expect(result.files.has('schema.prisma')).toBe(true)
+    expect(result.files.size).toBe(1)
+  })
+
   it('outputs model blocks with PascalCase names', () => {
-    const output = exporter.export(model)
+    const result = exporter.export(model)
+    const output = result.files.get('schema.prisma')
     expect(output).toContain('model Orders {')
     expect(output).toContain('model Users {')
   })
 
   it('maps SQL types to Prisma types', () => {
-    const output = exporter.export(model)
+    const result = exporter.export(model)
+    const output = result.files.get('schema.prisma')
     expect(output).toContain('BigInt')
     expect(output).toContain('String')
     expect(output).toContain('DateTime')
   })
 
   it('marks primary key with @id', () => {
-    const output = exporter.export(model)
+    const result = exporter.export(model)
+    const output = result.files.get('schema.prisma')
     expect(output).toContain('@id')
   })
 
   it('generates belongsTo relation field from FK', () => {
-    const output = exporter.export(model)
+    const result = exporter.export(model)
+    const output = result.files.get('schema.prisma')
     expect(output).toContain('@relation')
   })
 
   it('generates hasMany reverse relation in referenced model', () => {
-    const output = exporter.export(model)
+    const result = exporter.export(model)
+    const output = result.files.get('schema.prisma')
     // users should have orders[] (hasMany)
     expect(output).toContain('orders')
   })
 
   it('nullable fields use ? suffix', () => {
-    const output = exporter.export(model)
+    const result = exporter.export(model)
+    const output = result.files.get('schema.prisma')
     expect(output).toContain('DateTime?')
     expect(output).toContain('String?')
+  })
+
+  it('outputs datasource block with provider from source.system', () => {
+    const result = exporter.export(model)
+    const output = result.files.get('schema.prisma')
+    expect(output).toContain('datasource db {')
+    expect(output).toContain('provider = "mysql"')
+    expect(output).toContain('url      = env("DATABASE_URL")')
+  })
+
+  it('outputs generator block', () => {
+    const result = exporter.export(model)
+    const output = result.files.get('schema.prisma')
+    expect(output).toContain('generator client {')
+    expect(output).toContain('provider = "prisma-client-js"')
+  })
+
+  it('maps mariadb to mysql provider', () => {
+    const mariadbModel: ERModel = {
+      ...model,
+      source: {
+        ...model.source,
+        system: 'mariadb',
+      },
+    }
+    const result = exporter.export(mariadbModel)
+    const output = result.files.get('schema.prisma')
+    expect(output).toContain('provider = "mysql"')
   })
 })

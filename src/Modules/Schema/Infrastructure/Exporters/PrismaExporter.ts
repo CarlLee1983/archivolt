@@ -1,5 +1,6 @@
 import type { ERModel, Table } from '@/Modules/Schema/Domain/ERModel'
 import type { IExporter } from './IExporter'
+import type { ExportResult } from './IExporter'
 
 function toPascalCase(str: string): string {
   return str
@@ -31,6 +32,14 @@ function mapSqlTypeToPrisma(sqlType: string, nullable: 0 | 1): string {
   return nullable === 1 ? `${prismaType}?` : prismaType
 }
 
+function mapSystemToProvider(system: string): string {
+  const lower = system.toLowerCase()
+  if (lower === 'mariadb' || lower === 'mysql') return 'mysql'
+  if (lower === 'postgresql' || lower === 'postgres') return 'postgresql'
+  if (lower === 'sqlite') return 'sqlite'
+  return 'mysql'
+}
+
 interface RelationRef {
   readonly fromTable: string
   readonly fromColumn: string
@@ -43,7 +52,20 @@ export class PrismaExporter implements IExporter {
   readonly name = 'prisma'
   readonly label = 'Prisma Schema'
 
-  export(model: ERModel): string {
+  export(model: ERModel): ExportResult {
+    const provider = mapSystemToProvider(model.source.system)
+
+    const header = [
+      'datasource db {',
+      `  provider = "${provider}"`,
+      '  url      = env("DATABASE_URL")',
+      '}',
+      '',
+      'generator client {',
+      '  provider = "prisma-client-js"',
+      '}',
+    ].join('\n')
+
     // Collect all relations (FK + vFK)
     const relations: RelationRef[] = []
     for (const table of Object.values(model.tables)) {
@@ -67,13 +89,15 @@ export class PrismaExporter implements IExporter {
       }
     }
 
-    const blocks: string[] = []
+    const blocks: string[] = [header]
 
     for (const table of Object.values(model.tables)) {
       blocks.push(this.renderModel(table, relations, model.tables))
     }
 
-    return blocks.join('\n\n')
+    const content = blocks.join('\n\n')
+
+    return { files: new Map([['schema.prisma', content]]) }
   }
 
   private renderModel(
