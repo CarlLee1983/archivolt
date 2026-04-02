@@ -1,5 +1,5 @@
 import type { ERModel } from '@/Modules/Schema/Domain/ERModel'
-import type { IExporter } from '@/Modules/Schema/Infrastructure/Exporters/IExporter'
+import type { IExporter, ExportResult } from '@/Modules/Schema/Infrastructure/Exporters/IExporter'
 
 export class ExportService {
   private readonly exporters: Map<string, IExporter>
@@ -8,7 +8,7 @@ export class ExportService {
     this.exporters = new Map(exporters.map((e) => [e.name, e]))
   }
 
-  export(model: ERModel, format: string): string {
+  export(model: ERModel, format: string): ExportResult {
     const exporter = this.exporters.get(format)
     if (!exporter) {
       throw new Error(`Exporter not found for format: "${format}"`)

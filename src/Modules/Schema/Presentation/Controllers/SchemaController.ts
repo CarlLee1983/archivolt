@@ -112,8 +112,9 @@ export class SchemaController {
     if (!model) return ctx.json(ApiResponse.error('NOT_FOUND', 'No schema loaded'), 404)
     const body = await ctx.getBody<{ format: string }>()
     try {
-      const output = this.exportService.export(model, body.format)
-      return ctx.json(ApiResponse.success({ format: body.format, content: output }))
+      const result = this.exportService.export(model, body.format)
+      const content = [...result.files.values()].join('\n\n// ---\n\n')
+      return ctx.json(ApiResponse.success({ format: body.format, content }))
     } catch (error: any) {
       return ctx.json(ApiResponse.error('INVALID', error.message), 400)
     }

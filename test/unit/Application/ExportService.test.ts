@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { ExportService } from '@/Modules/Schema/Application/Services/ExportService'
 import { MermaidExporter } from '@/Modules/Schema/Infrastructure/Exporters/MermaidExporter'
 import { DbmlExporter } from '@/Modules/Schema/Infrastructure/Exporters/DbmlExporter'
-import type { IExporter } from '@/Modules/Schema/Infrastructure/Exporters/IExporter'
+import type { IExporter, ExportResult } from '@/Modules/Schema/Infrastructure/Exporters/IExporter'
 import type { ERModel } from '@/Modules/Schema/Domain/ERModel'
 
 const emptyModel: ERModel = {
@@ -19,13 +19,13 @@ const emptyModel: ERModel = {
 const mockExporterA: IExporter = {
   name: 'format_a',
   label: 'Format A',
-  export: (_model) => 'output_a',
+  export: (_model): ExportResult => ({ files: new Map([['a.txt', 'output_a']]) }),
 }
 
 const mockExporterB: IExporter = {
   name: 'format_b',
   label: 'Format B',
-  export: (_model) => 'output_b',
+  export: (_model): ExportResult => ({ files: new Map([['b.txt', 'output_b']]) }),
 }
 
 describe('ExportService', () => {
@@ -40,8 +40,8 @@ describe('ExportService', () => {
 
   it('export calls the correct exporter', () => {
     const service = new ExportService([mockExporterA, mockExporterB])
-    expect(service.export(emptyModel, 'format_a')).toBe('output_a')
-    expect(service.export(emptyModel, 'format_b')).toBe('output_b')
+    expect(service.export(emptyModel, 'format_a').files.get('a.txt')).toBe('output_a')
+    expect(service.export(emptyModel, 'format_b').files.get('b.txt')).toBe('output_b')
   })
 
   it('export throws if format is not found', () => {
