@@ -52,52 +52,60 @@ describe('EloquentExporter', () => {
     expect(exporter.label).toBe('Laravel Eloquent Models')
   })
 
+  it('returns one file per table', () => {
+    const result = exporter.export(model)
+    expect(result.files.size).toBe(2)
+    expect(result.files.has('Order.php')).toBe(true)
+    expect(result.files.has('User.php')).toBe(true)
+  })
+
   it('outputs PHP namespace and class', () => {
-    const output = exporter.export(model)
-    expect(output).toContain('namespace App\\Models;')
-    expect(output).toContain('class Order extends Model')
-    expect(output).toContain('class User extends Model')
+    const result = exporter.export(model)
+    const orderFile = result.files.get('Order.php')!
+    const userFile = result.files.get('User.php')!
+    expect(orderFile).toContain('namespace App\\Models;')
+    expect(orderFile).toContain('class Order extends Model')
+    expect(userFile).toContain('namespace App\\Models;')
+    expect(userFile).toContain('class User extends Model')
   })
 
   it('outputs $table property', () => {
-    const output = exporter.export(model)
-    expect(output).toContain("protected $table = 'orders';")
-    expect(output).toContain("protected $table = 'users';")
+    const result = exporter.export(model)
+    expect(result.files.get('Order.php')).toContain("protected $table = 'orders';")
+    expect(result.files.get('User.php')).toContain("protected $table = 'users';")
   })
 
   it('outputs $fillable with non-PK columns', () => {
-    const output = exporter.export(model)
-    expect(output).toContain("'user_id'")
-    expect(output).toContain("'total'")
+    const result = exporter.export(model)
+    const orderFile = result.files.get('Order.php')!
+    expect(orderFile).toContain("'user_id'")
+    expect(orderFile).toContain("'total'")
   })
 
   it('uses SoftDeletes when deleted_at column exists', () => {
-    const output = exporter.export(model)
-    expect(output).toContain('SoftDeletes')
+    const result = exporter.export(model)
+    expect(result.files.get('Order.php')).toContain('SoftDeletes')
   })
 
   it('generates belongsTo method from FK', () => {
-    const output = exporter.export(model)
-    expect(output).toContain('public function user()')
-    expect(output).toContain('return $this->belongsTo')
+    const result = exporter.export(model)
+    const orderFile = result.files.get('Order.php')!
+    expect(orderFile).toContain('public function user()')
+    expect(orderFile).toContain('return $this->belongsTo')
   })
 
   it('generates hasMany method in referenced model', () => {
-    const output = exporter.export(model)
-    // users has hasMany orders
-    expect(output).toContain('public function orders()')
-    expect(output).toContain('return $this->hasMany')
-  })
-
-  it('separates models with // --- delimiter', () => {
-    const output = exporter.export(model)
-    expect(output).toContain('// ---')
+    const result = exporter.export(model)
+    const userFile = result.files.get('User.php')!
+    expect(userFile).toContain('public function orders()')
+    expect(userFile).toContain('return $this->hasMany')
   })
 
   it('detects $timestamps from created_at/updated_at columns', () => {
-    const output = exporter.export(model)
+    const result = exporter.export(model)
+    // orders does NOT have both created_at and updated_at → timestamps should be false
+    expect(result.files.get('Order.php')).toContain('public $timestamps = false;')
     // users has created_at and updated_at → $timestamps not set to false
-    // orders does NOT have both → timestamps should be false
-    expect(output).toContain('public $timestamps = false;')
+    expect(result.files.get('User.php')).not.toContain('public $timestamps = false;')
   })
 })

@@ -1,5 +1,5 @@
 import type { ERModel, Table } from '@/Modules/Schema/Domain/ERModel'
-import type { IExporter } from './IExporter'
+import type { ExportResult, IExporter } from './IExporter'
 
 function toPascalCase(str: string): string {
   return str
@@ -37,7 +37,7 @@ export class EloquentExporter implements IExporter {
   readonly name = 'eloquent'
   readonly label = 'Laravel Eloquent Models'
 
-  export(model: ERModel): string {
+  export(model: ERModel): ExportResult {
     // Collect all relations
     const relations: RelationRef[] = []
     for (const table of Object.values(model.tables)) {
@@ -59,12 +59,14 @@ export class EloquentExporter implements IExporter {
       }
     }
 
-    const models: string[] = []
+    const files = new Map<string, string>()
     for (const table of Object.values(model.tables)) {
-      models.push(this.renderModel(table, relations, model.tables))
+      const className = toSingularPascalCase(table.name)
+      const content = this.renderModel(table, relations, model.tables)
+      files.set(`${className}.php`, content)
     }
 
-    return models.join('\n\n// ---\n\n')
+    return { files }
   }
 
   private renderModel(
