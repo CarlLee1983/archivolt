@@ -1,4 +1,5 @@
 import type { PlanetCore } from '@gravito/core'
+import { registerSchema } from './wiring'
 
 export async function registerRoutes(core: PlanetCore) {
   core.router.get('/api', async (ctx) => {
@@ -8,4 +9,6 @@ export async function registerRoutes(core: PlanetCore) {
       version: '0.1.0',
     })
   })
+
+  registerSchema(core)
 }
