@@ -9,6 +9,7 @@ export function registerSchemaRoutes(router: IModuleRouter, controller: SchemaCo
     r.post('/virtual-fk/confirm', (ctx) => controller.confirmVirtualFK(ctx))
     r.post('/virtual-fk/ignore', (ctx) => controller.ignoreVirtualFK(ctx))
     r.put('/groups', (ctx) => controller.updateGroups(ctx))
+    r.post('/groups/regroup', (ctx) => controller.regroup(ctx))
     r.get('/suggestions', (ctx) => controller.getSuggestions(ctx))
     r.post('/export', (ctx) => controller.exportSchema(ctx))
     r.get('/export/formats', (ctx) => controller.listExportFormats(ctx))

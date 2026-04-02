@@ -10,7 +10,7 @@ import {
   type Connection,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { useSchemaStore } from '@/stores/schemaStore'
+import { useSchemaStore, tableMatchesFilter } from '@/stores/schemaStore'
 import { TableNode, type TableNodeData } from './TableNode'
 import { buildEdges } from './edges'
 import { autoLayout } from './layoutEngine'
@@ -19,18 +19,24 @@ import { schemaApi } from '@/api/schema'
 const nodeTypes = { tableNode: TableNode }
 
 export function ERCanvas() {
-  const { model, visibleGroups, selectTable, refreshModel } = useSchemaStore()
+  const { model, visibleGroups, tableFilter, selectTable, refreshModel } = useSchemaStore()
+
+  const keyword = tableFilter.trim().toLowerCase()
 
   const visibleTables = useMemo(() => {
     if (!model) return []
     const visible = new Set<string>()
     for (const [groupId, group] of Object.entries(model.groups)) {
       if (visibleGroups.has(groupId)) {
-        for (const t of group.tables) visible.add(t)
+        for (const t of group.tables) {
+          if (tableMatchesFilter(t, keyword, model.tables)) {
+            visible.add(t)
+          }
+        }
       }
     }
     return Array.from(visible)
-  }, [model, visibleGroups])
+  }, [model, visibleGroups, keyword])
 
   const { layoutNodes, layoutEdges } = useMemo(() => {
     if (!model) return { layoutNodes: [], layoutEdges: [] }
@@ -95,11 +101,11 @@ export function ERCanvas() {
       onConnect={onConnect}
       nodeTypes={nodeTypes}
       fitView
-      className="bg-gray-950"
+      className="bg-surface"
     >
-      <Background color="#333" gap={20} />
-      <Controls className="!bg-gray-800 !border-gray-700 !text-white" />
-      <MiniMap className="!bg-gray-900" nodeColor="#4b5563" />
+      <Background color="#1e293b" gap={24} size={1} />
+      <Controls />
+      <MiniMap nodeColor="#334155" maskColor="rgba(15,23,42,0.85)" />
     </ReactFlow>
   )
 }

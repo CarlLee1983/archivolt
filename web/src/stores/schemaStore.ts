@@ -6,11 +6,14 @@ interface SchemaState {
   model: ERModel | null
   selectedTable: string | null
   visibleGroups: Set<string>
+  tableFilter: string
   loading: boolean
   error: string | null
   fetchSchema: () => Promise<void>
   selectTable: (name: string | null) => void
   toggleGroup: (groupId: string) => void
+  setVisibleGroups: (groupIds: Set<string>) => void
+  setTableFilter: (filter: string) => void
   refreshModel: (model: ERModel) => void
 }
 
@@ -18,6 +21,7 @@ export const useSchemaStore = create<SchemaState>((set, get) => ({
   model: null,
   selectedTable: null,
   visibleGroups: new Set<string>(),
+  tableFilter: '',
   loading: false,
   error: null,
 
@@ -45,5 +49,22 @@ export const useSchemaStore = create<SchemaState>((set, get) => ({
     set({ visibleGroups: next })
   },
 
+  setVisibleGroups: (groupIds) => set({ visibleGroups: groupIds }),
+
+  setTableFilter: (filter) => set({ tableFilter: filter }),
+
   refreshModel: (model) => set({ model }),
 }))
+
+/** Check if a table matches the keyword by name or column names */
+export function tableMatchesFilter(
+  tableName: string,
+  keyword: string,
+  tables: ERModel['tables'],
+): boolean {
+  if (!keyword) return true
+  if (tableName.toLowerCase().includes(keyword)) return true
+  const table = tables[tableName]
+  if (!table) return false
+  return table.columns.some((col) => col.name.toLowerCase().includes(keyword))
+}

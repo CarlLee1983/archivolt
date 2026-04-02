@@ -4,6 +4,8 @@ import type { JsonFileRepository } from '@/Modules/Schema/Infrastructure/Persist
 import type { ExportService } from '@/Modules/Schema/Application/Services/ExportService'
 import { addVirtualFK, removeVirtualFK, confirmSuggestion, ignoreSuggestion } from '@/Modules/Schema/Application/Services/VirtualFKService'
 import type { ERModel } from '@/Modules/Schema/Domain/ERModel'
+import { inferRelations } from '@/Modules/Schema/Domain/RelationInferrer'
+import { computeGroups } from '@/Modules/Schema/Domain/GroupingStrategy'
 
 export class SchemaController {
   constructor(
@@ -77,6 +79,16 @@ export class SchemaController {
     if (!model) return ctx.json(ApiResponse.error('NOT_FOUND', 'No schema loaded'), 404)
     const body = await ctx.getBody<{ groups: ERModel['groups'] }>()
     const updated: ERModel = { ...model, groups: body.groups }
+    await this.repo.save(updated)
+    return ctx.json(ApiResponse.success(updated.groups))
+  }
+
+  async regroup(ctx: IHttpContext): Promise<Response> {
+    const model = await this.repo.load()
+    if (!model) return ctx.json(ApiResponse.error('NOT_FOUND', 'No schema loaded'), 404)
+    const suggestions = inferRelations(model.tables)
+    const groups = computeGroups(model.tables, suggestions)
+    const updated: ERModel = { ...model, groups }
     await this.repo.save(updated)
     return ctx.json(ApiResponse.success(updated.groups))
   }

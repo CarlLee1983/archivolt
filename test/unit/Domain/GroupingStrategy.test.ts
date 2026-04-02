@@ -94,4 +94,66 @@ describe('computeGroups', () => {
     const groups = computeGroups({}, [])
     expect(Object.keys(groups).length).toBe(0)
   })
+
+  it('should prevent hub tables from merging unrelated groups', () => {
+    // "users" is referenced by 6 different tables across 3 domains
+    // Without hub detection, all would merge into one giant group
+    const tables = {
+      users: makeTable('users', ['id', 'name']),
+      // Domain A: orders
+      orders: makeTable('orders', ['id', 'user_id'], [{ columns: ['user_id'], refTable: 'users' }]),
+      order_items: makeTable('order_items', ['id', 'order_id'], [{ columns: ['order_id'], refTable: 'orders' }]),
+      // Domain B: posts
+      posts: makeTable('posts', ['id', 'user_id'], [{ columns: ['user_id'], refTable: 'users' }]),
+      post_comments: makeTable('post_comments', ['id', 'post_id'], [{ columns: ['post_id'], refTable: 'posts' }]),
+      // Domain C: payments
+      payments: makeTable('payments', ['id', 'user_id'], [{ columns: ['user_id'], refTable: 'users' }]),
+      payment_logs: makeTable('payment_logs', ['id', 'payment_id'], [{ columns: ['payment_id'], refTable: 'payments' }]),
+    }
+
+    // Create suggestions to push users above hub threshold
+    const suggestions: SuggestedRelation[] = [
+      { sourceTable: 'order_items', columns: ['user_id'], refTable: 'users', refColumns: ['id'] },
+      { sourceTable: 'post_comments', columns: ['user_id'], refTable: 'users', refColumns: ['id'] },
+      { sourceTable: 'payment_logs', columns: ['user_id'], refTable: 'users', refColumns: ['id'] },
+    ]
+
+    const groups = computeGroups(tables, suggestions)
+    const allGroups = Object.values(groups)
+
+    // Should NOT have a single group with all 7 tables
+    const maxGroupSize = Math.max(...allGroups.map((g) => g.tables.length))
+    expect(maxGroupSize).toBeLessThan(7)
+
+    // orders and order_items should be together
+    const orderGroup = allGroups.find((g) => g.tables.includes('orders'))
+    expect(orderGroup?.tables).toContain('order_items')
+
+    // posts and post_comments should be together
+    const postGroup = allGroups.find((g) => g.tables.includes('posts'))
+    expect(postGroup?.tables).toContain('post_comments')
+  })
+
+  it('should split oversized groups by prefix', () => {
+    // Create 25 tables that would all merge via FK chains
+    const tables: Record<string, Table> = {}
+    const names: string[] = []
+    for (let i = 0; i < 25; i++) {
+      const prefix = i < 10 ? 'user' : 'order'
+      const name = `${prefix}_table_${i}`
+      names.push(name)
+      const fks = i > 0 && i !== 10
+        ? [{ columns: [`ref_id`], refTable: names[i - 1] }]
+        : []
+      tables[name] = makeTable(name, ['id', 'ref_id'], fks)
+    }
+
+    const groups = computeGroups(tables, [])
+    const allGroups = Object.values(groups)
+
+    // No group should exceed MAX_GROUP_SIZE (20)
+    for (const g of allGroups) {
+      expect(g.tables.length).toBeLessThanOrEqual(20)
+    }
+  })
 })

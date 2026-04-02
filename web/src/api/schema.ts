@@ -55,6 +55,11 @@ export const schemaApi = {
       body: JSON.stringify({ groups }),
     }),
 
+  regroup: () =>
+    request<ERModel['groups']>('/api/groups/regroup', {
+      method: 'POST',
+    }),
+
   getSuggestions: () =>
     request<Array<{ tableName: string; vfk: VirtualForeignKey }>>('/api/suggestions'),
 
