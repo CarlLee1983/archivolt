@@ -6,11 +6,15 @@ import {
   MiniMap,
   useNodesState,
   useEdgesState,
+  BackgroundVariant,
+  useReactFlow,
+  useStore,
+  ReactFlowProvider,
   type Node,
   type Connection,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { useSchemaStore, tableMatchesFilter } from '@/stores/schemaStore'
+import { useSchemaStore, tableMatchesFilter, getNeighborTables } from '@/stores/schemaStore'
 import { TableNode, type TableNodeData } from './TableNode'
 import { buildEdges } from './edges'
 import { autoLayout } from './layoutEngine'
@@ -18,17 +22,35 @@ import { schemaApi } from '@/api/schema'
 
 const nodeTypes = { tableNode: TableNode }
 
-export function ERCanvas() {
-  const { model, visibleGroups, tableFilter, selectTable, refreshModel } = useSchemaStore()
+// Selector for zoom level to implement LOD
+const zoomSelector = (state: any) => state.transform[2]
+
+function ERCanvasInner() {
+  const { 
+    model, visibleGroups, tableFilter, selectTable, refreshModel, selectedTable, focusMode 
+  } = useSchemaStore()
+  const { setCenter } = useReactFlow()
+  const zoom = useStore(zoomSelector)
 
   const keyword = tableFilter.trim().toLowerCase()
 
+  // LOD: Hide columns when zoom < 0.5
+  const isLowDetail = zoom < 0.5
+
   const visibleTables = useMemo(() => {
     if (!model) return []
+    
+    // If Focus Mode is ON and a table is selected, only show neighbors
+    let neighborSet: Set<string> | null = null
+    if (focusMode && selectedTable && model) {
+      neighborSet = getNeighborTables(selectedTable, model)
+    }
+
     const visible = new Set<string>()
     for (const [groupId, group] of Object.entries(model.groups)) {
       if (visibleGroups.has(groupId)) {
         for (const t of group.tables) {
+          if (neighborSet && !neighborSet.has(t)) continue // Filter by focus
           if (tableMatchesFilter(t, keyword, model.tables)) {
             visible.add(t)
           }
@@ -36,7 +58,7 @@ export function ERCanvas() {
       }
     }
     return Array.from(visible)
-  }, [model, visibleGroups, keyword])
+  }, [model, visibleGroups, keyword, selectedTable, focusMode])
 
   const { layoutNodes, layoutEdges } = useMemo(() => {
     if (!model) return { layoutNodes: [], layoutEdges: [] }
@@ -44,13 +66,16 @@ export function ERCanvas() {
       id: name,
       type: 'tableNode',
       position: { x: 0, y: 0 },
-      data: { table: model.tables[name] } satisfies TableNodeData,
+      data: { 
+        table: model.tables[name],
+        isLowDetail // Pass LOD state to node
+      } satisfies TableNodeData,
     }))
     const allEdges = buildEdges(model).filter(
       (e) => visibleTables.includes(e.source) && visibleTables.includes(e.target)
     )
     return { layoutNodes: autoLayout(nodes, allEdges), layoutEdges: allEdges }
-  }, [model, visibleTables])
+  }, [model, visibleTables, isLowDetail])
 
   const [nodes, setNodes, onNodesChange] = useNodesState(layoutNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(layoutEdges)
@@ -59,6 +84,20 @@ export function ERCanvas() {
     setNodes(layoutNodes)
     setEdges(layoutEdges)
   }, [layoutNodes, layoutEdges, setNodes, setEdges])
+
+  // Smooth teleport to selected table
+  useEffect(() => {
+    if (selectedTable) {
+      const node = nodes.find(n => n.id === selectedTable)
+      if (node && node.measured?.width) {
+        setCenter(
+          node.position.x + node.measured.width / 2, 
+          node.position.y + (node.measured.height || 0) / 2, 
+          { zoom: Math.max(zoom, 0.8), duration: 800 }
+        )
+      }
+    }
+  }, [selectedTable, setCenter, nodes])
 
   const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
     selectTable(node.id)
@@ -102,10 +141,26 @@ export function ERCanvas() {
       nodeTypes={nodeTypes}
       fitView
       className="bg-surface"
+      defaultEdgeOptions={{
+        type: 'smoothstep',
+        style: { stroke: '#334155', strokeWidth: 1.5 },
+      }}
     >
-      <Background color="#1e293b" gap={24} size={1} />
+      <Background color="#1e293b" gap={24} size={1} variant={BackgroundVariant.Dots} />
       <Controls />
-      <MiniMap nodeColor="#334155" maskColor="rgba(15,23,42,0.85)" />
+      <MiniMap 
+        nodeColor="#3b82f6" 
+        maskColor="rgba(2,6,23,0.8)" 
+        className={selectedTable ? 'minimap-shifted' : ''} 
+      />
     </ReactFlow>
+  )
+}
+
+export function ERCanvas() {
+  return (
+    <ReactFlowProvider>
+      <ERCanvasInner />
+    </ReactFlowProvider>
   )
 }
