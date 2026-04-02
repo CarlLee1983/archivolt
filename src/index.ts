@@ -5,6 +5,13 @@ import path from 'path'
 
 async function start() {
   const args = process.argv.slice(2)
+
+  if (args[0] === 'export') {
+    const { runExportCommand } = await import('@/CLI/ExportCommand')
+    await runExportCommand(['export', ...args.slice(1)])
+    process.exit(0)
+  }
+
   const inputIndex = args.indexOf('--input')
   const reimport = args.includes('--reimport')
 
