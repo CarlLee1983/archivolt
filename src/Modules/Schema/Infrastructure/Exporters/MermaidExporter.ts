@@ -1,11 +1,11 @@
 import type { ERModel } from '@/Modules/Schema/Domain/ERModel'
-import type { IExporter } from './IExporter'
+import type { ExportResult, IExporter } from './IExporter'
 
 export class MermaidExporter implements IExporter {
   readonly name = 'mermaid'
   readonly label = 'Mermaid ER Diagram'
 
-  export(model: ERModel): string {
+  export(model: ERModel): ExportResult {
     const lines: string[] = ['erDiagram']
 
     // Table definitions
@@ -29,6 +29,9 @@ export class MermaidExporter implements IExporter {
       }
     }
 
-    return lines.join('\n')
+    const content = lines.join('\n')
+    return {
+      files: new Map([['schema.mmd', content]]),
+    }
   }
 }

@@ -71,24 +71,34 @@ describe('MermaidExporter', () => {
   })
 
   it('outputs erDiagram header', () => {
-    const output = exporter.export(model)
-    expect(output).toContain('erDiagram')
+    const result = exporter.export(model)
+    const content = result.files.get('schema.mmd')
+    expect(content).toContain('erDiagram')
   })
 
   it('outputs table column definitions', () => {
-    const output = exporter.export(model)
-    expect(output).toContain('orders {')
-    expect(output).toContain('bigint id')
-    expect(output).toContain('users {')
+    const result = exporter.export(model)
+    const content = result.files.get('schema.mmd')
+    expect(content).toContain('orders {')
+    expect(content).toContain('bigint id')
+    expect(content).toContain('users {')
   })
 
   it('outputs FK relationships', () => {
-    const output = exporter.export(model)
-    expect(output).toContain('orders }o--|| users')
+    const result = exporter.export(model)
+    const content = result.files.get('schema.mmd')
+    expect(content).toContain('orders }o--|| users')
   })
 
   it('outputs virtualFK relationships', () => {
-    const output = exporter.export(model)
-    expect(output).toContain('orders }o--|| products')
+    const result = exporter.export(model)
+    const content = result.files.get('schema.mmd')
+    expect(content).toContain('orders }o--|| products')
+  })
+
+  it('returns ExportResult with schema.mmd file', () => {
+    const result = exporter.export(model)
+    expect(result.files.has('schema.mmd')).toBe(true)
+    expect(result.files.size).toBe(1)
   })
 })
