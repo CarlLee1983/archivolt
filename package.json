@@ -14,7 +14,9 @@
     "lint": "biome lint src test",
     "lint:fix": "biome lint src test --fix",
     "format": "biome format src test --write",
-    "check": "bun run typecheck && bun run lint && bun run test"
+    "check": "bun run typecheck && bun run lint && bun run test",
+    "dev:web": "cd web && bun run dev",
+    "dev:all": "bun run dev & cd web && bun run dev"
   },
   "dependencies": {
     "@gravito/core": "^2.0.0"
