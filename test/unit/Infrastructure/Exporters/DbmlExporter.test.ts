@@ -69,25 +69,36 @@ describe('DbmlExporter', () => {
     expect(exporter.label).toBe('DBML')
   })
 
+  it('returns ExportResult with schema.dbml file', () => {
+    const result = exporter.export(model)
+    expect(result.files).toBeDefined()
+    expect(result.files.has('schema.dbml')).toBe(true)
+    expect(result.files.size).toBe(1)
+  })
+
   it('outputs Table definitions', () => {
-    const output = exporter.export(model)
+    const result = exporter.export(model)
+    const output = result.files.get('schema.dbml')!
     expect(output).toContain('Table orders {')
     expect(output).toContain('Table users {')
   })
 
   it('outputs columns inside table blocks', () => {
-    const output = exporter.export(model)
+    const result = exporter.export(model)
+    const output = result.files.get('schema.dbml')!
     expect(output).toContain('id bigint')
     expect(output).toContain('user_id bigint')
   })
 
   it('outputs Ref for FK relationships', () => {
-    const output = exporter.export(model)
+    const result = exporter.export(model)
+    const output = result.files.get('schema.dbml')!
     expect(output).toContain('Ref: orders.user_id > users.id')
   })
 
   it('outputs Ref for virtualFK relationships', () => {
-    const output = exporter.export(model)
+    const result = exporter.export(model)
+    const output = result.files.get('schema.dbml')!
     expect(output).toContain('Ref: orders.product_id > products.id')
   })
 })

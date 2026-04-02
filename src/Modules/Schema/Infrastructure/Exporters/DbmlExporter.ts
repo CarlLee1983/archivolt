@@ -1,11 +1,11 @@
 import type { ERModel } from '@/Modules/Schema/Domain/ERModel'
-import type { IExporter } from './IExporter'
+import type { ExportResult, IExporter } from './IExporter'
 
 export class DbmlExporter implements IExporter {
   readonly name = 'dbml'
   readonly label = 'DBML'
 
-  export(model: ERModel): string {
+  export(model: ERModel): ExportResult {
     const lines: string[] = []
 
     // Table definitions
@@ -28,6 +28,9 @@ export class DbmlExporter implements IExporter {
       }
     }
 
-    return lines.join('\n').trim()
+    const content = lines.join('\n').trim()
+    return {
+      files: new Map([['schema.dbml', content]]),
+    }
   }
 }
