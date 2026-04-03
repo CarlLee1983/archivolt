@@ -3,6 +3,7 @@
 import type {
   OperationManifest,
   OperationEntry,
+  OperationFlow,
 } from '@/Modules/Recording/Domain/OperationManifest'
 
 function formatDate(ts: number): string {
@@ -51,6 +52,30 @@ function renderOperation(op: OperationEntry): string {
   return lines.join('\n')
 }
 
+function renderFlow(flow: OperationFlow, index: number): string {
+  const lines: string[] = []
+  lines.push(`### Flow ${index + 1}: ${flow.label}`)
+  lines.push(`- **Pattern Sequence**: ${flow.chunkPatternSequence}`)
+  lines.push(`- **Dominant Pattern**: ${flow.dominantPattern}`)
+
+  if (flow.semanticTables.length > 0) {
+    lines.push(`- **Semantic Tables**: ${flow.semanticTables.map((t) => `\`${t}\``).join(', ')}`)
+  } else {
+    lines.push('- **Semantic Tables**: (全為噪音資料表)')
+  }
+
+  if (flow.inferredRelations.length > 0) {
+    const relStr = flow.inferredRelations
+      .map((r) => `${r.sourceTable} → ${r.targetTable} (${r.sourceColumn}, ${r.confidence})`)
+      .join(', ')
+    lines.push(`- **推斷關係**: ${relStr}`)
+  }
+
+  lines.push(`- **Chunks**: ${flow.chunkIndices.map((i) => `#${i + 1}`).join(', ')}`)
+
+  return lines.join('\n')
+}
+
 export function renderManifest(manifest: OperationManifest): string {
   const uniqueTables = new Set(manifest.tableMatrix.map((t) => t.table))
   const startDate = formatDate(manifest.recordedAt.start)
@@ -67,6 +92,30 @@ export function renderManifest(manifest: OperationManifest): string {
     sections.push(renderOperation(op))
     sections.push('')
   }
+
+  if (manifest.flows.length > 0) {
+    const noiseLabel =
+      manifest.noiseTables.length > 0
+        ? ` (noise tables: ${manifest.noiseTables.map((t) => `\`${t}\``).join(', ')})`
+        : ''
+    sections.push(`## Flows${noiseLabel}`)
+    sections.push('')
+    for (let i = 0; i < manifest.flows.length; i++) {
+      sections.push(renderFlow(manifest.flows[i], i))
+      sections.push('')
+    }
+  }
+
+  sections.push('## Bootstrap (Pre-Navigation)')
+  sections.push('')
+  sections.push(`- **Queries captured**: ${manifest.bootstrap.queryCount}`)
+  sections.push(`- **OTHER operations**: ${manifest.bootstrap.otherOperationCount}`)
+  if (manifest.bootstrap.tablesAccessed.length > 0) {
+    sections.push(`- **Tables accessed**: ${manifest.bootstrap.tablesAccessed.map((t) => `\`${t}\``).join(', ')}`)
+  } else {
+    sections.push('- **Tables accessed**: (none)')
+  }
+  sections.push('')
 
   sections.push('## Table Involvement Matrix')
   sections.push('')

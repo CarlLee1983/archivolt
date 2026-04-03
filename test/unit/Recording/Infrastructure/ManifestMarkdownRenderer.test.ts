@@ -4,6 +4,13 @@ import { describe, it, expect } from 'vitest'
 import { renderManifest } from '@/Modules/Recording/Infrastructure/Renderers/ManifestMarkdownRenderer'
 import type { OperationManifest } from '@/Modules/Recording/Domain/OperationManifest'
 
+function makeManifest(overrides: Partial<OperationManifest> = {}): OperationManifest {
+  return {
+    ...sampleManifest,
+    ...overrides,
+  }
+}
+
 const sampleManifest: OperationManifest = {
   sessionId: 'rec_test',
   recordedAt: { start: 1712180000000, end: 1712180900000 },
@@ -92,5 +99,58 @@ describe('renderManifest', () => {
     const parsed = JSON.parse(jsonMatch![1])
     expect(parsed.sessionId).toBe('rec_test')
     expect(parsed.stats.totalChunks).toBe(2)
+  })
+
+  it('renders ## Flows section with flow labels and noise table annotation', () => {
+    const manifest = makeManifest({
+      flows: [
+        {
+          id: 'flow_1000_0',
+          label: '/products',
+          url: '/products',
+          startTime: 1000,
+          endTime: 1100,
+          chunkIndices: [0],
+          tables: ['products', 'users'],
+          semanticTables: ['products'],
+          dominantPattern: 'read',
+          chunkPatternSequence: 'read',
+          inferredRelations: [],
+        },
+      ],
+      noiseTables: ['users'],
+      noiseThreshold: 0.6,
+      bootstrap: { queryCount: 2, otherOperationCount: 1, tablesAccessed: ['migrations'] },
+    })
+    const output = renderManifest(manifest)
+    expect(output).toContain('## Flows')
+    expect(output).toContain('/products')
+    expect(output).toContain('products')
+    expect(output).toContain('noise tables')
+    expect(output).toContain('users')
+  })
+
+  it('renders ## Bootstrap section with pre-navigation stats', () => {
+    const manifest = makeManifest({
+      flows: [],
+      noiseTables: [],
+      noiseThreshold: 0.6,
+      bootstrap: { queryCount: 3, otherOperationCount: 2, tablesAccessed: ['migrations', 'sessions'] },
+    })
+    const output = renderManifest(manifest)
+    expect(output).toContain('## Bootstrap')
+    expect(output).toContain('3')
+    expect(output).toContain('migrations')
+  })
+
+  it('omits ## Flows section when there are no flows', () => {
+    const manifest = makeManifest({
+      flows: [],
+      noiseTables: [],
+      noiseThreshold: 0.6,
+      bootstrap: { queryCount: 0, otherOperationCount: 0, tablesAccessed: [] },
+    })
+    const output = renderManifest(manifest)
+    expect(output).not.toContain('## Flows')
   })
 })
