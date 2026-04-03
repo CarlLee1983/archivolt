@@ -11,7 +11,7 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
     headers: { 'Content-Type': 'application/json' },
     ...options,
   })
-  const json: ApiResponse<T> = await res.json()
+  const json = (await res.json()) as ApiResponse<T>
   if (!json.success) {
     throw new Error(json.error?.message ?? 'Unknown error')
   }

@@ -14,7 +14,7 @@ export function createApi(baseUrl: string) {
   return {
     async checkStatus(): Promise<StatusResult> {
       const res = await fetch(`${baseUrl}/api/recording/status`, { method: 'GET' })
-      const json = await res.json()
+      const json = (await res.json()) as any
       if (!json.success || !json.data?.recording) {
         return { recording: false, sessionId: null }
       }
@@ -31,7 +31,7 @@ export function createApi(baseUrl: string) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(marker),
         })
-        const json = await res.json()
+        const json = (await res.json()) as any
         if (!json.success) {
           return { success: false, error: json.error?.message ?? 'Unknown error' }
         }

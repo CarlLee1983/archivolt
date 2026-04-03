@@ -1,7 +1,7 @@
+import { describe, it, expect, vi } from 'vitest'
 import { DoctorService } from '@/Modules/Doctor/Application/DoctorService'
-import type { IHealthCheck, CheckResult } from '@/Modules/Doctor/Domain/IHealthCheck'
+import type { IHealthCheck } from '@/Modules/Doctor/Domain/IHealthCheck'
 import type { IPrompter } from '@/Modules/Doctor/Domain/IPrompter'
-import { vi } from 'vitest'
 
 function makeCheck(overrides: Partial<IHealthCheck> & { name: string; category: 'environment' | 'data' }): IHealthCheck {
   return {

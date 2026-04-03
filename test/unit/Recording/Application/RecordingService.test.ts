@@ -40,7 +40,7 @@ function buildComQuery(sql: string): Buffer {
 describe('RecordingService', () => {
   let service: RecordingService
   let repo: RecordingRepository
-  let mockDb: ReturnType<typeof Bun.listen> | null = null
+  let mockDb: any = null
 
   beforeEach(() => {
     if (existsSync(TEST_DIR)) rmSync(TEST_DIR, { recursive: true })
@@ -73,7 +73,7 @@ describe('RecordingService', () => {
         error() {},
       },
     })
-    return mockDb.port
+    return (mockDb as any).port
   }
 
   it('starts and stops a recording session', async () => {

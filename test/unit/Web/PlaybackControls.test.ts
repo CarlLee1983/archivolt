@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 
 function createMockChunks(count: number) {
   return Array.from({ length: count }, (_, i) => ({

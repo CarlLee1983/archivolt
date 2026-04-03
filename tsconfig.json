@@ -23,6 +23,7 @@
     "sourceMap": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
+    "types": ["bun-types", "vitest/globals"],
     "paths": {
       "@/*": ["./src/*"]
     }
