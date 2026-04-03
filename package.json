@@ -16,7 +16,8 @@
     "format": "biome format src test --write",
     "check": "bun run typecheck && bun run lint && bun run test",
     "dev:web": "cd web && bun run dev",
-    "dev:all": "bun run dev & cd web && bun run dev"
+    "dev:all": "bun run dev & cd web && bun run dev",
+    "build:ext": "cd extension && bun run build.ts"
   },
   "dependencies": {
     "@gravito/core": "^2.0.0"
