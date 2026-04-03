@@ -4,8 +4,10 @@ import {
   removeVirtualFK,
   confirmSuggestion,
   ignoreSuggestion,
+  applyInferredRelations,
 } from '@/Modules/Schema/Application/Services/VirtualFKService'
 import type { ERModel } from '@/Modules/Schema/Domain/ERModel'
+import type { InferredRelation } from '@/Modules/Recording/Domain/OperationManifest'
 
 const baseModel: ERModel = {
   source: {
@@ -130,5 +132,72 @@ describe('ignoreSuggestion', () => {
 
     expect(newModel).not.toBe(baseModel)
     expect(baseModel.tables.orders.virtualForeignKeys.length).toBe(1)
+  })
+})
+
+describe('applyInferredRelations', () => {
+  const highRelation: InferredRelation = {
+    sourceTable: 'users',
+    sourceColumn: 'order_id',
+    targetTable: 'orders',
+    targetColumn: 'id',
+    confidence: 'high',
+    evidence: 'column name pattern',
+  }
+
+  const lowRelation: InferredRelation = {
+    sourceTable: 'users',
+    sourceColumn: 'status_id',
+    targetTable: 'statuses',
+    targetColumn: 'id',
+    confidence: 'low',
+    evidence: 'weak pattern',
+  }
+
+  it('adds inferred relations as auto-suggested vFKs', () => {
+    const result = applyInferredRelations(baseModel, [highRelation], 'high')
+
+    expect(result.added).toBe(1)
+    expect(result.skipped).toBe(0)
+    const usersVFKs = result.model.tables.users.virtualForeignKeys
+    expect(usersVFKs.length).toBe(1)
+    expect(usersVFKs[0].columns).toEqual(['order_id'])
+    expect(usersVFKs[0].refTable).toBe('orders')
+    expect(usersVFKs[0].refColumns).toEqual(['id'])
+    expect(usersVFKs[0].confidence).toBe('auto-suggested')
+  })
+
+  it('skips duplicates when vFK already exists', () => {
+    // baseModel.orders already has vFK: user_id -> users.id
+    const duplicateRelation: InferredRelation = {
+      sourceTable: 'orders',
+      sourceColumn: 'user_id',
+      targetTable: 'users',
+      targetColumn: 'id',
+      confidence: 'high',
+      evidence: 'existing pattern',
+    }
+
+    const result = applyInferredRelations(baseModel, [duplicateRelation], 'low')
+
+    expect(result.added).toBe(0)
+    expect(result.skipped).toBe(1)
+    expect(result.model.tables.orders.virtualForeignKeys.length).toBe(1)
+  })
+
+  it('filters by minimum confidence', () => {
+    const result = applyInferredRelations(baseModel, [highRelation, lowRelation], 'high')
+
+    expect(result.added).toBe(1)
+    expect(result.skipped).toBe(1)
+    expect(result.model.tables.users.virtualForeignKeys.length).toBe(1)
+  })
+
+  it('returns immutable model', () => {
+    const originalVFKCount = baseModel.tables.users.virtualForeignKeys.length
+    const result = applyInferredRelations(baseModel, [highRelation], 'high')
+
+    expect(result.model).not.toBe(baseModel)
+    expect(baseModel.tables.users.virtualForeignKeys.length).toBe(originalVFKCount)
   })
 })

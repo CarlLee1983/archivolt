@@ -1,5 +1,6 @@
 import type { ERModel } from '@/Modules/Schema/Domain/ERModel'
 import { createVirtualFK } from '@/Modules/Schema/Domain/ERModel'
+import type { InferredRelation } from '@/Modules/Recording/Domain/OperationManifest'
 
 export interface AddVirtualFKParams {
   readonly tableName: string
@@ -55,4 +56,86 @@ export function confirmSuggestion(model: ERModel, tableName: string, vfkId: stri
 
 export function ignoreSuggestion(model: ERModel, tableName: string, vfkId: string): ERModel {
   return removeVirtualFK(model, tableName, vfkId)
+}
+
+const CONFIDENCE_RANK: Record<'high' | 'medium' | 'low', number> = {
+  high: 3,
+  medium: 2,
+  low: 1,
+}
+
+export interface ApplyInferredRelationsResult {
+  readonly model: ERModel
+  readonly added: number
+  readonly skipped: number
+}
+
+export function applyInferredRelations(
+  model: ERModel,
+  relations: readonly InferredRelation[],
+  minConfidence: 'high' | 'medium' | 'low',
+): ApplyInferredRelationsResult {
+  const minRank = CONFIDENCE_RANK[minConfidence]
+  let currentModel = model
+  let added = 0
+  let skipped = 0
+
+  for (const relation of relations) {
+    if (CONFIDENCE_RANK[relation.confidence] < minRank) {
+      skipped++
+      continue
+    }
+
+    const table = currentModel.tables[relation.sourceTable]
+    if (!table) {
+      skipped++
+      continue
+    }
+
+    const isDuplicate =
+      table.virtualForeignKeys.some(
+        (vfk) =>
+          vfk.columns.includes(relation.sourceColumn) &&
+          vfk.refTable === relation.targetTable &&
+          vfk.refColumns.includes(relation.targetColumn),
+      ) ||
+      table.foreignKeys.some(
+        (fk) =>
+          fk.columns.includes(relation.sourceColumn) &&
+          fk.refTable === relation.targetTable &&
+          fk.refColumns.includes(relation.targetColumn),
+      )
+
+    if (isDuplicate) {
+      skipped++
+      continue
+    }
+
+    const withVFK = addVirtualFK(currentModel, {
+      tableName: relation.sourceTable,
+      columns: [relation.sourceColumn],
+      refTable: relation.targetTable,
+      refColumns: [relation.targetColumn],
+    })
+
+    const addedVFKs = withVFK.tables[relation.sourceTable].virtualForeignKeys
+    const newVFKId = addedVFKs[addedVFKs.length - 1].id
+
+    currentModel = {
+      ...withVFK,
+      tables: {
+        ...withVFK.tables,
+        [relation.sourceTable]: {
+          ...withVFK.tables[relation.sourceTable],
+          virtualForeignKeys: withVFK.tables[relation.sourceTable].virtualForeignKeys.map((vfk) =>
+            vfk.id === newVFKId ? { ...vfk, confidence: 'auto-suggested' as const } : vfk,
+          ),
+        },
+      },
+    }
+
+    added++
+  }
+
+  return { model: currentModel, added, skipped }
 }
