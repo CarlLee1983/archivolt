@@ -35,12 +35,36 @@ export interface TableInvolvement {
   readonly operationIndices: readonly number[]
 }
 
+export interface BootstrapInfo {
+  readonly queryCount: number
+  readonly otherOperationCount: number
+  readonly tablesAccessed: readonly string[]
+}
+
+export interface OperationFlow {
+  readonly id: string
+  readonly label: string
+  readonly url: string
+  readonly startTime: number
+  readonly endTime: number
+  readonly chunkIndices: readonly number[]
+  readonly tables: readonly string[]
+  readonly semanticTables: readonly string[]
+  readonly dominantPattern: ChunkPattern
+  readonly chunkPatternSequence: string
+  readonly inferredRelations: readonly InferredRelation[]
+}
+
 export interface OperationManifest {
   readonly sessionId: string
   readonly recordedAt: { readonly start: number; readonly end: number }
   readonly operations: readonly OperationEntry[]
   readonly tableMatrix: readonly TableInvolvement[]
   readonly inferredRelations: readonly InferredRelation[]
+  readonly flows: readonly OperationFlow[]
+  readonly noiseTables: readonly string[]
+  readonly noiseThreshold: number
+  readonly bootstrap: BootstrapInfo
   readonly stats: {
     readonly totalChunks: number
     readonly readOps: number
