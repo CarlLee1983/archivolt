@@ -16,6 +16,11 @@ import {
   inferRelations,
   mergeRelations,
 } from '@/Modules/Recording/Application/Strategies/RelationInferrer'
+import {
+  detectNoiseTables,
+  DEFAULT_NOISE_THRESHOLD,
+} from '@/Modules/Recording/Application/Strategies/NoiseTableDetector'
+import { groupIntoFlows } from '@/Modules/Recording/Application/Strategies/FlowGrouper'
 
 const DEFAULT_SILENCE_MS = 500
 
@@ -85,6 +90,9 @@ export class ChunkAnalyzerService {
         operationIndices: [...entry.ops].sort((a, b) => a - b),
       }))
 
+    const noiseTables = detectNoiseTables(chunks, DEFAULT_NOISE_THRESHOLD)
+    const { flows, bootstrap } = groupIntoFlows(chunks, operations, noiseTables)
+
     return {
       sessionId: session.id,
       recordedAt: {
@@ -94,6 +102,10 @@ export class ChunkAnalyzerService {
       operations,
       tableMatrix,
       inferredRelations: mergeRelations(allRelations),
+      flows,
+      noiseTables,
+      noiseThreshold: DEFAULT_NOISE_THRESHOLD,
+      bootstrap,
       stats: { totalChunks: chunks.length, readOps, writeOps, mixedOps, silenceSplit },
     }
   }

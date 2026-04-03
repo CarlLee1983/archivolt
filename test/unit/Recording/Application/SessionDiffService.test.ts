@@ -20,6 +20,10 @@ const manifestA: OperationManifest = {
       evidence: 'naming convention',
     },
   ],
+  flows: [],
+  noiseTables: [],
+  noiseThreshold: 0.6,
+  bootstrap: { queryCount: 0, otherOperationCount: 0, tablesAccessed: [] },
   stats: { totalChunks: 5, readOps: 3, writeOps: 1, mixedOps: 1, silenceSplit: 0 },
 }
 
@@ -49,6 +53,10 @@ const manifestB: OperationManifest = {
       evidence: 'naming convention',
     },
   ],
+  flows: [],
+  noiseTables: [],
+  noiseThreshold: 0.6,
+  bootstrap: { queryCount: 0, otherOperationCount: 0, tablesAccessed: [] },
   stats: { totalChunks: 4, readOps: 2, writeOps: 1, mixedOps: 1, silenceSplit: 0 },
 }
 

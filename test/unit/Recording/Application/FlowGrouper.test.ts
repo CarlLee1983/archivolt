@@ -31,7 +31,7 @@ function makeChunk(overrides: {
   }
 }
 
-function makeOp(index: number, tables: string[] = []): OperationEntry {
+function makeOp(index: number, tables: readonly string[] = []): OperationEntry {
   return {
     chunkId: `chunk_${index}`,
     index,

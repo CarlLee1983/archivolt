@@ -38,6 +38,10 @@ const sampleManifest: OperationManifest = {
   inferredRelations: [
     { sourceTable: 'products', sourceColumn: 'category_id', targetTable: 'categories', targetColumn: 'id', confidence: 'high', evidence: 'JOIN ON in chunk_1' },
   ],
+  flows: [],
+  noiseTables: [],
+  noiseThreshold: 0.6,
+  bootstrap: { queryCount: 0, otherOperationCount: 0, tablesAccessed: [] },
   stats: { totalChunks: 2, readOps: 1, writeOps: 1, mixedOps: 0, silenceSplit: 0 },
 }
 

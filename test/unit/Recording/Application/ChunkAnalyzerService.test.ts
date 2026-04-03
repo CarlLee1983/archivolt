@@ -169,4 +169,67 @@ describe('ChunkAnalyzerService', () => {
     const highRels = manifest.inferredRelations.filter((r) => r.confidence === 'high')
     expect(highRels).toHaveLength(1)
   })
+
+  it('populates flows with navigate-boundary grouping', () => {
+    const queries = [
+      makeQuery({ timestamp: 1010, sql: 'SELECT * FROM products', tables: ['products'], operation: 'SELECT' }),
+      makeQuery({ timestamp: 2010, sql: 'INSERT INTO orders (id) VALUES (1)', tables: ['orders'], operation: 'INSERT' }),
+    ]
+    const markers = [
+      makeMarker({ timestamp: 1000, url: '/products', action: 'navigate' }),
+      makeMarker({ timestamp: 2000, url: '/checkout', action: 'navigate' }),
+    ]
+    const manifest = service.analyze(mockSession, queries, markers)
+    expect(manifest.flows).toHaveLength(2)
+    expect(manifest.flows[0].url).toBe('/products')
+    expect(manifest.flows[1].url).toBe('/checkout')
+  })
+
+  it('detects noise tables that appear in more than 60% of chunks', () => {
+    const queries = [
+      makeQuery({ timestamp: 1010, sql: 'SELECT * FROM users', tables: ['users'], operation: 'SELECT' }),
+      makeQuery({ timestamp: 2010, sql: 'SELECT * FROM users JOIN products ON users.id = products.owner_id', tables: ['users', 'products'], operation: 'SELECT' }),
+      makeQuery({ timestamp: 3010, sql: 'SELECT * FROM users JOIN orders ON users.id = orders.user_id', tables: ['users', 'orders'], operation: 'SELECT' }),
+    ]
+    const markers = [
+      makeMarker({ timestamp: 1000, url: '/a', action: 'navigate' }),
+      makeMarker({ timestamp: 2000, url: '/b', action: 'navigate' }),
+      makeMarker({ timestamp: 3000, url: '/c', action: 'navigate' }),
+    ]
+    const manifest = service.analyze(mockSession, queries, markers)
+    expect(manifest.noiseTables).toContain('users')
+    expect(manifest.noiseThreshold).toBe(0.6)
+  })
+
+  it('captures pre-navigation queries in bootstrap', () => {
+    const queries = [
+      makeQuery({ timestamp: 100, sql: 'SET NAMES utf8mb4', tables: [], operation: 'OTHER' }),
+      makeQuery({ timestamp: 200, sql: 'SELECT * FROM migrations', tables: ['migrations'], operation: 'SELECT' }),
+      makeQuery({ timestamp: 1010, sql: 'SELECT * FROM products', tables: ['products'], operation: 'SELECT' }),
+    ]
+    const markers = [
+      makeMarker({ timestamp: 1000, url: '/products', action: 'navigate' }),
+    ]
+    const manifest = service.analyze(mockSession, queries, markers)
+    expect(manifest.bootstrap.queryCount).toBe(2)
+    expect(manifest.bootstrap.otherOperationCount).toBe(1)
+    expect(manifest.bootstrap.tablesAccessed).toContain('migrations')
+  })
+
+  it('sets semanticTables on flows excluding noise tables', () => {
+    const queries = [
+      makeQuery({ timestamp: 1010, sql: 'SELECT * FROM users', tables: ['users'], operation: 'SELECT' }),
+      makeQuery({ timestamp: 2010, sql: 'SELECT * FROM users JOIN products ON users.id = products.owner_id', tables: ['users', 'products'], operation: 'SELECT' }),
+      makeQuery({ timestamp: 3010, sql: 'SELECT * FROM users JOIN orders ON users.id = orders.user_id', tables: ['users', 'orders'], operation: 'SELECT' }),
+    ]
+    const markers = [
+      makeMarker({ timestamp: 1000, url: '/a', action: 'navigate' }),
+      makeMarker({ timestamp: 2000, url: '/b', action: 'navigate' }),
+      makeMarker({ timestamp: 3000, url: '/c', action: 'navigate' }),
+    ]
+    const manifest = service.analyze(mockSession, queries, markers)
+    const flowB = manifest.flows.find((f) => f.url === '/b')
+    expect(flowB?.semanticTables).not.toContain('users')
+    expect(flowB?.semanticTables).toContain('products')
+  })
 })
