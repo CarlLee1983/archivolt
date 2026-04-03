@@ -14,6 +14,8 @@ export function PlaybackControls() {
     stepPrev,
     stepNext,
     setPlaybackSpeed,
+    autoFocus,
+    toggleAutoFocus,
   } = useRecordingStore()
 
   if (chunks.length === 0) return null
@@ -69,6 +71,20 @@ export function PlaybackControls() {
 
       {/* Spacer */}
       <div className="flex-1" />
+
+      {/* Auto-focus toggle */}
+      <button
+        onClick={toggleAutoFocus}
+        className={`p-1 rounded transition-colors cursor-pointer ${
+          autoFocus ? 'text-primary' : 'text-muted hover:text-text-dim'
+        }`}
+        title={autoFocus ? '自動聚焦：開' : '自動聚焦：關'}
+      >
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="3" />
+          <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+        </svg>
+      </button>
 
       {/* Position indicator */}
       {activeChunkId && (
