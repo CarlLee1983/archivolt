@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSchemaStore, tableMatchesFilter } from '@/stores/schemaStore'
 import { ERCanvas } from '@/components/Canvas/ERCanvas'
+import { TimelinePanel } from '@/components/Timeline/TimelinePanel'
+import { useRecordingStore } from '@/stores/recordingStore'
 import { schemaApi } from '@/api/schema'
 import type { Table } from '@/types/er-model'
 
@@ -97,6 +99,8 @@ export default function App() {
     refreshModel,
     focusMode, setFocusMode,
   } = useSchemaStore()
+
+  const hasSessions = useRecordingStore((s) => s.sessions.length > 0)
 
   const [linkingColumn, setLinkingColumn] = useState<string | null>(null)
   const [linkTarget, setLinkTarget] = useState('')
@@ -315,8 +319,13 @@ export default function App() {
         <ERCanvas />
       </div>
 
+      {/* ── Right: Timeline Panel ── */}
+      <TimelinePanel />
+
       {/* ── Right: Detail Panel ── */}
-      <div className={`fixed top-20 right-4 bottom-4 w-80 backdrop-blur-md border border-white/10 shadow-glass rounded-2xl flex flex-col z-40 overflow-hidden transition-all duration-300 ${
+      <div className={`fixed top-20 bottom-4 w-80 backdrop-blur-md border border-white/10 shadow-glass rounded-2xl flex flex-col z-40 overflow-hidden transition-all duration-300 ${
+        hasSessions ? 'right-[22rem]' : 'right-4'
+      } ${
         selected ? 'translate-x-0 opacity-100' : 'translate-x-8 opacity-0 pointer-events-none'
       }`}>
         <div className="px-5 py-4 border-b border-white/5 flex items-center justify-between bg-white/2">
