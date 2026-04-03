@@ -90,6 +90,7 @@ export class ChunkAnalyzerService {
         operationIndices: [...entry.ops].sort((a, b) => a - b),
       }))
 
+    // 先偵測噪音 table，再依 navigate boundary 分組（groupIntoFlows 依賴 noiseTables 結果）
     const noiseTables = detectNoiseTables(chunks, DEFAULT_NOISE_THRESHOLD)
     const { flows, bootstrap } = groupIntoFlows(chunks, operations, noiseTables)
 
