@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   ReactFlow,
   Background,
@@ -20,6 +20,7 @@ import { TableNode, type TableNodeData } from './TableNode'
 import { buildEdges } from './edges'
 import { autoLayout } from './layoutEngine'
 import { schemaApi } from '@/api/schema'
+import { VFKDialog } from './VFKDialog'
 
 const nodeTypes = { tableNode: TableNode }
 
@@ -111,61 +112,78 @@ function ERCanvasInner() {
     }
   }, [selectedTable, setCenter, nodes])
 
+  const [pendingConnection, setPendingConnection] = useState<{ source: string; target: string } | null>(null)
+
   const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
     selectTable(node.id)
   }, [selectTable])
 
-  const onConnect = useCallback(async (connection: Connection) => {
-    if (!model || !connection.source || !connection.target) return
-    const sourceTable = model.tables[connection.source]
-    if (!sourceTable) return
+  const onConnect = useCallback((connection: Connection) => {
+    if (!connection.source || !connection.target) return
+    setPendingConnection({ source: connection.source, target: connection.target })
+  }, [])
 
-    const candidate = sourceTable.columns.find((c) =>
-      c.name.endsWith('_id') && !sourceTable.foreignKeys.some((fk) => fk.columns.includes(c.name))
-    )
-
-    if (!candidate) return
-
+  const handleVFKConfirm = useCallback(async (sourceColumn: string, targetColumn: string) => {
+    if (!pendingConnection) return
     try {
       await schemaApi.addVirtualFK({
-        tableName: connection.source,
-        columns: [candidate.name],
-        refTable: connection.target,
-        refColumns: ['id'],
+        tableName: pendingConnection.source,
+        columns: [sourceColumn],
+        refTable: pendingConnection.target,
+        refColumns: [targetColumn],
       })
       const updated = await schemaApi.getSchema()
       refreshModel(updated)
     } catch (e) {
       console.error('Failed to add virtual FK:', e)
+    } finally {
+      setPendingConnection(null)
     }
-  }, [model, refreshModel])
+  }, [pendingConnection, refreshModel])
+
+  const handleVFKCancel = useCallback(() => {
+    setPendingConnection(null)
+  }, [])
 
   if (!model) return null
 
+  const pendingSourceTable = pendingConnection ? model.tables[pendingConnection.source] : null
+  const pendingTargetTable = pendingConnection ? model.tables[pendingConnection.target] : null
+
   return (
-    <ReactFlow
-      nodes={nodes}
-      edges={edges}
-      onNodesChange={onNodesChange}
-      onEdgesChange={onEdgesChange}
-      onNodeClick={onNodeClick}
-      onConnect={onConnect}
-      nodeTypes={nodeTypes}
-      fitView
-      className="bg-surface"
-      defaultEdgeOptions={{
-        type: 'smoothstep',
-        style: { stroke: '#334155', strokeWidth: 1.5 },
-      }}
-    >
-      <Background color="#1e293b" gap={24} size={1} variant={BackgroundVariant.Dots} />
-      <Controls />
-      <MiniMap 
-        nodeColor="#3b82f6" 
-        maskColor="rgba(2,6,23,0.8)" 
-        className={selectedTable ? 'minimap-shifted' : ''} 
-      />
-    </ReactFlow>
+    <>
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onNodeClick={onNodeClick}
+        onConnect={onConnect}
+        nodeTypes={nodeTypes}
+        fitView
+        className="bg-surface"
+        defaultEdgeOptions={{
+          type: 'smoothstep',
+          style: { stroke: '#334155', strokeWidth: 1.5 },
+        }}
+      >
+        <Background color="#1e293b" gap={24} size={1} variant={BackgroundVariant.Dots} />
+        <Controls />
+        <MiniMap
+          nodeColor="#3b82f6"
+          maskColor="rgba(2,6,23,0.8)"
+          className={selectedTable ? 'minimap-shifted' : ''}
+        />
+      </ReactFlow>
+      {pendingConnection && pendingSourceTable && pendingTargetTable && (
+        <VFKDialog
+          sourceTable={pendingSourceTable}
+          targetTable={pendingTargetTable}
+          onConfirm={handleVFKConfirm}
+          onCancel={handleVFKCancel}
+        />
+      )}
+    </>
   )
 }
 
