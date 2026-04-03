@@ -1,5 +1,10 @@
 import type { IProtocolParser } from '@/Modules/Recording/Domain/ProtocolParser'
 import {
+  createMarker,
+  type OperationMarker,
+  type MarkerAction,
+} from '@/Modules/Recording/Domain/OperationMarker'
+import {
   createSession,
   stopSession,
   updateSessionStats,
@@ -91,6 +96,25 @@ export class RecordingService {
 
   status(): RecordingSession | null {
     return this.currentSession
+  }
+
+  addMarker(params: {
+    url: string
+    action: MarkerAction
+    target?: string
+    label?: string
+  }): OperationMarker {
+    if (!this.currentSession) {
+      throw new Error('No active recording session.')
+    }
+
+    const marker = createMarker({
+      sessionId: this.currentSession.id,
+      ...params,
+    })
+
+    this.repo.appendMarkers(this.currentSession.id, [marker])
+    return marker
   }
 
   private handleQuery(query: CapturedQuery): void {
