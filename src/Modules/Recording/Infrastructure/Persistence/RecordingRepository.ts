@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, readdirSync } from 'node:fs'
 import { writeFile, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import type { RecordingSession, CapturedQuery } from '@/Modules/Recording/Domain/Session'
+import type { OperationMarker } from '@/Modules/Recording/Domain/OperationMarker'
 
 export class RecordingRepository {
   constructor(private readonly baseDir: string) {
@@ -20,6 +21,10 @@ export class RecordingRepository {
 
   private queriesFile(sessionId: string): string {
     return path.join(this.sessionDir(sessionId), 'queries.jsonl')
+  }
+
+  private markersFile(sessionId: string): string {
+    return path.join(this.sessionDir(sessionId), 'markers.jsonl')
   }
 
   async saveSession(session: RecordingSession): Promise<void> {
@@ -44,6 +49,25 @@ export class RecordingRepository {
     const filePath = this.queriesFile(sessionId)
     const existing = existsSync(filePath) ? await readFile(filePath, 'utf-8') : ''
     await writeFile(filePath, existing + lines, 'utf-8')
+  }
+
+  async appendMarkers(sessionId: string, markers: readonly OperationMarker[]): Promise<void> {
+    if (markers.length === 0) return
+    const lines = markers.map((m) => JSON.stringify(m)).join('\n') + '\n'
+    const filePath = this.markersFile(sessionId)
+    const existing = existsSync(filePath) ? await readFile(filePath, 'utf-8') : ''
+    await writeFile(filePath, existing + lines, 'utf-8')
+  }
+
+  async loadMarkers(sessionId: string): Promise<OperationMarker[]> {
+    const filePath = this.markersFile(sessionId)
+    if (!existsSync(filePath)) return []
+    const text = await readFile(filePath, 'utf-8')
+    if (!text.trim()) return []
+    return text
+      .trim()
+      .split('\n')
+      .map((line) => JSON.parse(line) as OperationMarker)
   }
 
   async loadQueries(sessionId: string): Promise<CapturedQuery[]> {
