@@ -27,8 +27,9 @@ export class BunVersionCheck implements IHealthCheck {
   }
 
   private compareVersions(a: string, b: string): number {
-    const partsA = a.split('.').map(Number)
-    const partsB = b.split('.').map(Number)
+    const clean = (v: string) => v.split('-')[0].split('+')[0]
+    const partsA = clean(a).split('.').map(Number)
+    const partsB = clean(b).split('.').map(Number)
     for (let i = 0; i < Math.max(partsA.length, partsB.length); i++) {
       const diff = (partsA[i] ?? 0) - (partsB[i] ?? 0)
       if (diff !== 0) return diff

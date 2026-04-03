@@ -92,7 +92,9 @@ async function start() {
     const { DoctorReporter } = await import('@/Modules/Doctor/Infrastructure/DoctorReporter')
     const { NoopPrompter } = await import('@/Modules/Doctor/Infrastructure/InteractivePrompter')
 
-    const checks = createChecks(process.cwd())
+    const checks = createChecks(process.cwd()).filter(
+      (c) => c.name !== 'Port 可用',
+    )
     const service = new DoctorService(checks, new NoopPrompter())
     const reporter = new DoctorReporter()
     const results = await service.runAll()

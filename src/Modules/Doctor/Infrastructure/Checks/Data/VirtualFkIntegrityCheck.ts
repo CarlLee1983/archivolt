@@ -28,18 +28,31 @@ export class VirtualFkIntegrityCheck implements IHealthCheck {
   }
 
   async fix(): Promise<CheckResult> {
-    const data = JSON.parse(readFileSync(this.filePath, 'utf-8'))
-    const orphans = this.findOrphans(data)
-    const orphanIds = new Set(orphans.map((o) => o.vfkId))
+    try {
+      if (!existsSync(this.filePath)) {
+        return createCheckResult(this, 'error', 'archivolt.json 不存在，無法修復')
+      }
+      const data = JSON.parse(readFileSync(this.filePath, 'utf-8'))
+      const orphans = this.findOrphans(data)
+      const orphanIds = new Set(orphans.map((o) => o.vfkId))
 
-    for (const table of Object.values(data.tables) as any[]) {
-      table.virtualForeignKeys = table.virtualForeignKeys.filter(
-        (vfk: any) => !orphanIds.has(vfk.id),
+      const cleanedTables = Object.fromEntries(
+        Object.entries(data.tables as Record<string, any>).map(([name, table]) => [
+          name,
+          {
+            ...table,
+            virtualForeignKeys: (table.virtualForeignKeys ?? []).filter(
+              (vfk: any) => !orphanIds.has(vfk.id),
+            ),
+          },
+        ]),
       )
-    }
 
-    writeFileSync(this.filePath, JSON.stringify(data, null, 2), 'utf-8')
-    return createCheckResult(this, 'ok', `已移除 ${orphans.length} 個 orphan vFK`)
+      writeFileSync(this.filePath, JSON.stringify({ ...data, tables: cleanedTables }, null, 2), 'utf-8')
+      return createCheckResult(this, 'ok', `已移除 ${orphans.length} 個 orphan vFK`)
+    } catch (error) {
+      return createCheckResult(this, 'error', `修復失敗: ${error}`)
+    }
   }
 
   private findOrphans(data: any): Array<{ table: string; vfkId: string; refTable: string }> {

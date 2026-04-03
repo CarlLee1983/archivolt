@@ -1,5 +1,5 @@
 import type { IHealthCheck, CheckResult } from '@/Modules/Doctor/Domain/IHealthCheck'
-import type { IPrompter } from '@/Modules/Doctor/Infrastructure/InteractivePrompter'
+import type { IPrompter } from '@/Modules/Doctor/Domain/IPrompter'
 
 export class DoctorService {
   constructor(
@@ -31,16 +31,16 @@ export class DoctorService {
 
   async interactiveFix(
     results: readonly CheckResult[],
-    checks: readonly IHealthCheck[],
+    log: (msg: string) => void = console.log,
   ): Promise<void> {
     const fixable = results.filter((r) => r.severity !== 'ok' && r.fixable)
     if (fixable.length === 0) return
 
-    console.log('\n發現可修復的問題：')
+    log('\n發現可修復的問題：')
 
     for (let i = 0; i < fixable.length; i++) {
       const result = fixable[i]
-      const check = checks.find((c) => c.name === result.name)
+      const check = this.checks.find((c) => c.name === result.name)
       if (!check?.fix) continue
 
       const confirmed = await this.prompter.confirm(
@@ -50,7 +50,7 @@ export class DoctorService {
       if (confirmed) {
         const fixResult = await check.fix()
         const icon = fixResult.severity === 'ok' ? '✓' : '✗'
-        console.log(`  ${icon} ${fixResult.message}`)
+        log(`  ${icon} ${fixResult.message}`)
       }
     }
   }

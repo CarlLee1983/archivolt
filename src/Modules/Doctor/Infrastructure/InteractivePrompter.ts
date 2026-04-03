@@ -1,6 +1,6 @@
-export interface IPrompter {
-  confirm(message: string): Promise<boolean>
-}
+import type { IPrompter } from '@/Modules/Doctor/Domain/IPrompter'
+
+export type { IPrompter }
 
 export class InteractivePrompter implements IPrompter {
   async confirm(message: string): Promise<boolean> {

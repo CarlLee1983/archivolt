@@ -28,18 +28,31 @@ export class TableGroupIntegrityCheck implements IHealthCheck {
   }
 
   async fix(): Promise<CheckResult> {
-    const data = JSON.parse(readFileSync(this.filePath, 'utf-8'))
-    const tableNames = new Set(Object.keys(data.tables ?? {}))
-    let removedCount = 0
+    try {
+      if (!existsSync(this.filePath)) {
+        return createCheckResult(this, 'error', 'archivolt.json 不存在，無法修復')
+      }
+      const data = JSON.parse(readFileSync(this.filePath, 'utf-8'))
+      const tableNames = new Set(Object.keys(data.tables ?? {}))
 
-    for (const group of Object.values(data.groups ?? {}) as any[]) {
-      const before = group.tables.length
-      group.tables = group.tables.filter((t: string) => tableNames.has(t))
-      removedCount += before - group.tables.length
+      const cleanedGroups = Object.fromEntries(
+        Object.entries(data.groups as Record<string, any>).map(([name, group]) => {
+          const filtered = (group.tables ?? []).filter((t: string) => tableNames.has(t))
+          return [name, { ...group, tables: filtered }]
+        }),
+      )
+
+      const removedCount = Object.values(data.groups as Record<string, any>).reduce(
+        (sum: number, g: any) => sum + (g.tables ?? []).length, 0,
+      ) - Object.values(cleanedGroups).reduce(
+        (sum: number, g: any) => sum + g.tables.length, 0,
+      )
+
+      writeFileSync(this.filePath, JSON.stringify({ ...data, groups: cleanedGroups }, null, 2), 'utf-8')
+      return createCheckResult(this, 'ok', `已移除 ${removedCount} 個 orphan 引用`)
+    } catch (error) {
+      return createCheckResult(this, 'error', `修復失敗: ${error}`)
     }
-
-    writeFileSync(this.filePath, JSON.stringify(data, null, 2), 'utf-8')
-    return createCheckResult(this, 'ok', `已移除 ${removedCount} 個 orphan 引用`)
   }
 
   private findOrphanRefs(data: any): Array<{ group: string; table: string }> {

@@ -56,6 +56,6 @@ export async function runDoctorCommand(argv: string[]): Promise<void> {
   reporter.report(results)
 
   if (!args.noFix) {
-    await service.interactiveFix(results, checks)
+    await service.interactiveFix(results)
   }
 }

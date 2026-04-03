@@ -1,6 +1,6 @@
 import { DoctorService } from '@/Modules/Doctor/Application/DoctorService'
 import type { IHealthCheck, CheckResult } from '@/Modules/Doctor/Domain/IHealthCheck'
-import type { IPrompter } from '@/Modules/Doctor/Infrastructure/InteractivePrompter'
+import type { IPrompter } from '@/Modules/Doctor/Domain/IPrompter'
 import { vi } from 'vitest'
 
 function makeCheck(overrides: Partial<IHealthCheck> & { name: string; category: 'environment' | 'data' }): IHealthCheck {
@@ -109,7 +109,7 @@ describe('DoctorService', () => {
     const service = new DoctorService(checks, makePrompter([true]))
 
     const results = await service.runAll()
-    await service.interactiveFix(results, checks)
+    await service.interactiveFix(results)
 
     expect(fixFn).toHaveBeenCalledOnce()
   })
@@ -140,7 +140,7 @@ describe('DoctorService', () => {
     const service = new DoctorService(checks, makePrompter([false]))
 
     const results = await service.runAll()
-    await service.interactiveFix(results, checks)
+    await service.interactiveFix(results)
 
     expect(fixFn).not.toHaveBeenCalled()
   })
