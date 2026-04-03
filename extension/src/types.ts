@@ -1,8 +1,17 @@
+export interface RequestDetail {
+  readonly method: string
+  readonly url: string
+  readonly headers?: Record<string, string>
+  readonly body?: string
+  readonly queryParams?: Record<string, string>
+}
+
 export interface MarkerPayload {
   readonly url: string
   readonly action: 'navigate' | 'submit' | 'click' | 'request'
   readonly target?: string
   readonly label?: string
+  readonly request?: RequestDetail
 }
 
 export interface ExtensionState {

@@ -86,6 +86,13 @@ export class RecordingController {
       action: string
       target?: string
       label?: string
+      request?: {
+        method: string
+        url: string
+        headers?: Record<string, string>
+        body?: string
+        queryParams?: Record<string, string>
+      }
     }>()
 
     try {
@@ -94,6 +101,7 @@ export class RecordingController {
         action: body.action as any,
         target: body.target,
         label: body.label,
+        request: body.request,
       })
       return ctx.json(ApiResponse.success(marker), 201)
     } catch (error: any) {

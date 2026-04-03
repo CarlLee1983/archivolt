@@ -52,9 +52,14 @@ function disconnect(): void {
 
 // ── Marker sending ──
 
-function sendMarker(url: string, action: 'navigate' | 'submit' | 'click' | 'request', target?: string): void {
+function sendMarker(
+  url: string,
+  action: 'navigate' | 'submit' | 'click' | 'request',
+  target?: string,
+  request?: import('./types').RequestDetail,
+): void {
   if (!state.connected) return
-  api.sendMarker({ url, action, target })
+  api.sendMarker({ url, action, target, request })
 }
 
 // ── webNavigation listener (page navigations in locked tab) ──
@@ -95,7 +100,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'MARKER') {
     if (!state.connected) return false
     if (sender.tab?.id !== state.lockedTabId) return false
-    sendMarker(message.url, message.action, message.target)
+    sendMarker(message.url, message.action, message.target, message.request)
     return false
   }
 

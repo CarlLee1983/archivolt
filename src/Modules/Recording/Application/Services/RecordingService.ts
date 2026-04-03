@@ -3,6 +3,7 @@ import {
   createMarker,
   type OperationMarker,
   type MarkerAction,
+  type MarkerRequestDetail,
 } from '@/Modules/Recording/Domain/OperationMarker'
 import {
   createSession,
@@ -103,6 +104,7 @@ export class RecordingService {
     action: MarkerAction
     target?: string
     label?: string
+    request?: MarkerRequestDetail
   }): OperationMarker {
     if (!this.currentSession) {
       throw new Error('No active recording session.')
