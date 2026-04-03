@@ -36,6 +36,12 @@ async function start() {
     process.exit(0)
   }
 
+  if (args[0] === 'diff') {
+    const { runDiffCommand } = await import('@/CLI/DiffCommand')
+    await runDiffCommand(['diff', ...args.slice(1)])
+    process.exit(0)
+  }
+
   const inputIndex = args.indexOf('--input')
   const reimport = args.includes('--reimport')
 
