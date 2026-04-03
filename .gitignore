@@ -5,3 +5,4 @@ archivolt.json
 *.log
 .env
 .env.local
+.vscode/
