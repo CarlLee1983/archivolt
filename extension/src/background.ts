@@ -57,18 +57,20 @@ function sendMarker(
   action: 'navigate' | 'submit' | 'click' | 'request',
   target?: string,
   request?: import('./types').RequestDetail,
+  label?: string,
 ): void {
   if (!state.connected) return
-  api.sendMarker({ url, action, target, request })
+  api.sendMarker({ url, action, target, request, label })
 }
 
 // ── webNavigation listener (page navigations in locked tab) ──
 
-chrome.webNavigation.onCompleted.addListener((details) => {
+chrome.webNavigation.onCompleted.addListener(async (details) => {
   if (!state.connected) return
   if (details.tabId !== state.lockedTabId) return
   if (details.frameId !== 0) return // main frame only
-  sendMarker(new URL(details.url).pathname, 'navigate')
+  const tab = await chrome.tabs.get(details.tabId)
+  sendMarker(new URL(details.url).pathname, 'navigate', undefined, undefined, tab.title)
 })
 
 // ── Message handler (from content script + popup) ──
@@ -107,7 +109,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'SPA_NAVIGATE') {
     if (!state.connected) return false
     if (sender.tab?.id !== state.lockedTabId) return false
-    sendMarker(message.url, 'navigate')
+    sendMarker(message.url, 'navigate', undefined, undefined, message.label)
     return false
   }
 

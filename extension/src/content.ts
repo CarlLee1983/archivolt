@@ -24,7 +24,9 @@ function describeElement(el: Element): string {
   const cls = el.className && typeof el.className === 'string'
     ? `.${el.className.split(/\s+/).filter(Boolean).slice(0, 2).join('.')}`
     : ''
-  return `${tag}${id}${cls}`
+  const text = el.textContent?.trim().slice(0, 40) || ''
+  const textPart = text ? ` "${text}"` : ''
+  return `${tag}${id}${cls}${textPart}`
 }
 
 function sendToBackground(type: string, data: Record<string, unknown>): void {
@@ -90,6 +92,15 @@ function serializeFormData(form: HTMLFormElement): Record<string, string> {
   return obj
 }
 
+function isApiUrl(url: string): boolean {
+  try {
+    const pathname = new URL(url, location.origin).pathname
+    return pathname.startsWith('/api/') || pathname.startsWith('/graphql')
+  } catch {
+    return false
+  }
+}
+
 // ── Form submit listener ──
 
 document.addEventListener('submit', (e) => {
@@ -140,7 +151,9 @@ window.fetch = function (input: RequestInfo | URL, init?: RequestInit) {
   const reqUrl = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
   const method = (init?.method ?? (isRequest ? (input as Request).method : 'GET')).toUpperCase()
 
-  if (method !== 'GET') {
+  const shouldCapture = method !== 'GET' || isApiUrl(reqUrl)
+
+  if (shouldCapture) {
     const headers = init?.headers
       ? extractHeadersFromObj(init.headers)
       : isRequest
@@ -153,9 +166,11 @@ window.fetch = function (input: RequestInfo | URL, init?: RequestInit) {
         ? (input as Request).clone().body
         : null
 
-    const bodyPromise = bodySource instanceof ReadableStream
-      ? new Response(bodySource).text().then(truncateBody).catch(() => '[unreadable]')
-      : extractBody(bodySource as BodyInit | null | undefined)
+    const bodyPromise = method === 'GET'
+      ? Promise.resolve(undefined)
+      : bodySource instanceof ReadableStream
+        ? new Response(bodySource).text().then(truncateBody).catch(() => '[unreadable]')
+        : extractBody(bodySource as BodyInit | null | undefined)
 
     bodyPromise.then((body) => {
       const request: RequestDetail = {
@@ -198,9 +213,14 @@ XMLHttpRequest.prototype.setRequestHeader = function (name: string, value: strin
 
 XMLHttpRequest.prototype.send = function (body?: Document | XMLHttpRequestBodyInit | null) {
   const meta = (this as any).__archivolt
-  if (meta && meta.method !== 'GET') {
+  if (meta) {
+    const shouldCapture = meta.method !== 'GET' || isApiUrl(meta.url)
+
+    if (shouldCapture) {
     let bodyStr: string | undefined
-    if (body == null) bodyStr = undefined
+    if (meta.method === 'GET') {
+      bodyStr = undefined
+    } else if (body == null) bodyStr = undefined
     else if (typeof body === 'string') bodyStr = truncateBody(body)
     else if (body instanceof URLSearchParams) bodyStr = truncateBody(body.toString())
     else if (body instanceof FormData) {
@@ -226,7 +246,8 @@ XMLHttpRequest.prototype.send = function (body?: Document | XMLHttpRequestBodyIn
       target: `${meta.method} ${meta.url}`,
       request,
     })
-  }
+    } // end shouldCapture
+  } // end meta
   return originalXHRSend.call(this, body)
 }
 
@@ -237,14 +258,14 @@ const originalReplaceState = history.replaceState
 
 history.pushState = function (...args: Parameters<typeof history.pushState>) {
   originalPushState.apply(this, args)
-  sendToBackground('SPA_NAVIGATE', { url: location.pathname })
+  sendToBackground('SPA_NAVIGATE', { url: location.pathname, label: document.title })
 }
 
 history.replaceState = function (...args: Parameters<typeof history.replaceState>) {
   originalReplaceState.apply(this, args)
-  sendToBackground('SPA_NAVIGATE', { url: location.pathname })
+  sendToBackground('SPA_NAVIGATE', { url: location.pathname, label: document.title })
 }
 
 window.addEventListener('popstate', () => {
-  sendToBackground('SPA_NAVIGATE', { url: location.pathname })
+  sendToBackground('SPA_NAVIGATE', { url: location.pathname, label: document.title })
 })
