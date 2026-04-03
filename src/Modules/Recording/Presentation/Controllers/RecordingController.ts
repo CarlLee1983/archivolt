@@ -3,11 +3,13 @@ import { ApiResponse } from '@/Shared/Presentation/ApiResponse'
 import type { RecordingService } from '@/Modules/Recording/Application/Services/RecordingService'
 import type { RecordingRepository } from '@/Modules/Recording/Infrastructure/Persistence/RecordingRepository'
 import { buildChunks } from '@/Modules/Recording/Domain/QueryChunk'
+import { ChunkAnalyzerService } from '@/Modules/Recording/Application/Services/ChunkAnalyzerService'
 
 export class RecordingController {
   constructor(
     private readonly service: RecordingService,
     private readonly repo: RecordingRepository,
+    private readonly analyzer: ChunkAnalyzerService,
   ) {}
 
   async start(ctx: IHttpContext): Promise<Response> {
@@ -201,5 +203,20 @@ export class RecordingController {
     }
 
     return ctx.json(ApiResponse.success({ queries: chunk.queries }))
+  }
+
+  async getManifest(ctx: IHttpContext): Promise<Response> {
+    const id = ctx.getParam('id')!
+
+    const session = await this.repo.loadSession(id)
+    if (!session) {
+      return ctx.json(ApiResponse.error('NOT_FOUND', `Session ${id} not found`), 404)
+    }
+
+    const queries = await this.repo.loadQueries(id)
+    const markers = await this.repo.loadMarkers(id)
+    const manifest = this.analyzer.analyze(session, queries, markers)
+
+    return ctx.json(ApiResponse.success(manifest))
   }
 }

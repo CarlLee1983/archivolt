@@ -12,5 +12,6 @@ export function registerRecordingRoutes(router: IModuleRouter, controller: Recor
     r.get('/recordings/:id/markers', (ctx) => controller.getMarkers(ctx))
     r.get('/recordings/:id/chunks', (ctx) => controller.getChunks(ctx))
     r.get('/recordings/:id/chunks/:chunkId/queries', (ctx) => controller.getChunkQueries(ctx))
+    r.get('/recordings/:id/manifest', (ctx) => controller.getManifest(ctx))
   })
 }
