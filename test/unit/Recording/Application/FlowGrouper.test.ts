@@ -195,4 +195,19 @@ describe('groupIntoFlows', () => {
     expect(result.flows[0].startTime).toBe(1000)
     expect(result.flows[0].endTime).toBe(1060)
   })
+
+  it('finalizes the last flow when no subsequent navigate marker exists', () => {
+    const chunks = [
+      makeChunk({ timestamp: 1000, marker: makeMarker(1000, '/first'), pattern: 'marker' }),
+      makeChunk({ timestamp: 1010, tables: ['orders'], pattern: 'read' }),
+      makeChunk({ timestamp: 2000, marker: makeMarker(2000, '/second'), pattern: 'marker' }),
+      makeChunk({ timestamp: 2010, tables: ['products'], pattern: 'write' }),
+      makeChunk({ timestamp: 2020, tables: ['products'], pattern: 'read' }),
+    ]
+    const ops = chunks.map((c, i) => makeOp(i, c.tables))
+    const result = groupIntoFlows(chunks, ops, [])
+    expect(result.flows).toHaveLength(2)
+    expect(result.flows[1].tables).toEqual(['products'])
+    expect(result.flows[1].chunkPatternSequence).toBe('write → read')
+  })
 })
