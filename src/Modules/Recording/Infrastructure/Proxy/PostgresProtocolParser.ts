@@ -11,18 +11,26 @@ const MSG_ERROR_RESPONSE = 0x45 // 'E'
 const MSG_ROW_DESCRIPTION = 0x54 // 'T'
 const MSG_AUTH = 0x52 // 'R'
 
+/** Check that buffer contains a complete PG message (type + int32 length + payload) */
+function isCompleteMessage(data: Buffer): boolean {
+  if (data.length < 5) return false
+  const declaredLength = data.readUInt32BE(1)
+  return data.length >= 1 + declaredLength
+}
+
 export class PostgresProtocolParser implements IProtocolParser {
   extractQuery(data: Buffer): ParsedQuery | null {
-    if (data.length < 5) return null
+    if (!isCompleteMessage(data)) return null
     const type = data[0]
+    const msgEnd = 1 + data.readUInt32BE(1)
 
     if (type === MSG_QUERY) {
-      const payload = data.subarray(5, 1 + data.readUInt32BE(1))
+      const payload = data.subarray(5, msgEnd)
       return { sql: payload.toString('utf-8').replace(/\0$/, '') }
     }
 
     if (type === MSG_PARSE) {
-      const payload = data.subarray(5)
+      const payload = data.subarray(5, msgEnd)
       const nameEnd = payload.indexOf(0)
       if (nameEnd === -1) return null
       const queryStart = nameEnd + 1
@@ -35,12 +43,13 @@ export class PostgresProtocolParser implements IProtocolParser {
   }
 
   parseResponse(data: Buffer): ParsedServerResponse {
-    if (data.length < 5) return { type: 'unknown' }
+    if (!isCompleteMessage(data)) return { type: 'unknown' }
     const type = data[0]
+    const msgEnd = 1 + data.readUInt32BE(1)
 
     if (type === MSG_COMMAND_COMPLETE) {
       const tag = data
-        .subarray(5, 1 + data.readUInt32BE(1))
+        .subarray(5, msgEnd)
         .toString('utf-8')
         .replace(/\0$/, '')
       const rowMatch = tag.match(/\d+$/)
@@ -48,8 +57,7 @@ export class PostgresProtocolParser implements IProtocolParser {
     }
 
     if (type === MSG_ERROR_RESPONSE) {
-      const length = data.readUInt32BE(1)
-      const payload = data.subarray(5, 1 + length)
+      const payload = data.subarray(5, msgEnd)
       let message = 'Unknown error'
       let code = 0
       let offset = 0
@@ -60,14 +68,16 @@ export class PostgresProtocolParser implements IProtocolParser {
         const valueEnd = payload.indexOf(0, offset)
         if (valueEnd === -1) break
         const value = payload.subarray(offset, valueEnd).toString('utf-8')
-        if (fieldType === 0x4d) message = value // 'M'
-        if (fieldType === 0x43) code = parseInt(value, 10) || 0 // 'C' (SQLSTATE)
+        if (fieldType === 0x4d) message = value // 'M' — Message
+        if (fieldType === 0x56) code = parseInt(value, 10) || 0 // 'V' — Severity numeric
         offset = valueEnd + 1
       }
       return { type: 'error', data: { code, message } }
     }
 
     if (type === MSG_ROW_DESCRIPTION) {
+      // Need at least 7 bytes: type(1) + length(4) + field_count(2)
+      if (data.length < 7) return { type: 'unknown' }
       const fieldCount = data.readUInt16BE(5)
       return {
         type: 'resultSet',

@@ -33,6 +33,21 @@ describe('PostgresProtocolParser', () => {
     it('returns null for buffers shorter than 5 bytes', () => {
       expect(parser.extractQuery(Buffer.from([0x51, 0, 0]))).toBeNull()
     })
+
+    it('returns null for truncated/fragmented Query message', () => {
+      // Declare length of 20, but only provide 10 bytes total
+      const packet = Buffer.alloc(10)
+      packet[0] = 0x51 // 'Q'
+      packet.writeUInt32BE(20, 1) // claims 20 bytes payload
+      expect(parser.extractQuery(packet)).toBeNull()
+    })
+
+    it('returns null for truncated Parse message', () => {
+      const packet = Buffer.alloc(8)
+      packet[0] = 0x50 // 'P'
+      packet.writeUInt32BE(50, 1) // claims 50 bytes but buffer is only 8
+      expect(parser.extractQuery(packet)).toBeNull()
+    })
   })
 
   describe('parseResponse', () => {
@@ -84,6 +99,28 @@ describe('PostgresProtocolParser', () => {
 
     it('returns unknown for short buffers', () => {
       expect(parser.parseResponse(Buffer.from([0x43, 0])).type).toBe('unknown')
+    })
+
+    it('returns unknown for truncated CommandComplete', () => {
+      const packet = Buffer.alloc(8)
+      packet[0] = 0x43 // 'C'
+      packet.writeUInt32BE(30, 1) // claims 30 bytes but buffer is only 8
+      expect(parser.parseResponse(packet).type).toBe('unknown')
+    })
+
+    it('returns unknown for truncated RowDescription (no field_count bytes)', () => {
+      // type(1) + length(4) = 5 bytes, but field_count needs 2 more
+      const packet = Buffer.alloc(5)
+      packet[0] = 0x54 // 'T'
+      packet.writeUInt32BE(4, 1) // length = 4 (minimum, no room for field_count)
+      expect(parser.parseResponse(packet).type).toBe('unknown')
+    })
+
+    it('returns unknown for fragmented ErrorResponse', () => {
+      const packet = Buffer.alloc(6)
+      packet[0] = 0x45 // 'E'
+      packet.writeUInt32BE(100, 1) // claims 100 bytes
+      expect(parser.parseResponse(packet).type).toBe('unknown')
     })
   })
 
