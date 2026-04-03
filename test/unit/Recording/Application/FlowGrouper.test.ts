@@ -210,4 +210,14 @@ describe('groupIntoFlows', () => {
     expect(result.flows[1].tables).toEqual(['products'])
     expect(result.flows[1].chunkPatternSequence).toBe('write → read')
   })
+
+  it('throws when chunks and operations arrays have different lengths', () => {
+    const chunks = [
+      makeChunk({ timestamp: 1000, marker: makeMarker(1000, '/page'), pattern: 'marker' }),
+    ]
+    const ops: OperationEntry[] = []  // 長度不符
+    expect(() => groupIntoFlows(chunks, ops, [])).toThrow(
+      'groupIntoFlows: chunks.length (1) !== operations.length (0)'
+    )
+  })
 })

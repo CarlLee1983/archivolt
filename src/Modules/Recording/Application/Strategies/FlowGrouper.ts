@@ -69,6 +69,12 @@ export function groupIntoFlows(
   operations: readonly OperationEntry[],
   noiseTables: readonly string[],
 ): FlowGroupResult {
+  if (chunks.length !== operations.length) {
+    throw new Error(
+      `groupIntoFlows: chunks.length (${chunks.length}) !== operations.length (${operations.length}). Arrays must be parallel.`,
+    )
+  }
+
   const noiseSet = new Set(noiseTables)
 
   const firstNavIndex = chunks.findIndex((c) => c.marker?.action === 'navigate')
