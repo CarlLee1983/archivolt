@@ -101,7 +101,17 @@ In many legacy systems, databases have numerous "implicit relationships"—colum
   - `Application`: Services for importing, managing vFKs, and exporting.
   - `Infrastructure`: JSON persistence, Exporters (Eloquent, Prisma, etc.), and File Writers.
 - `web/`: React + ReactFlow frontend application.
+- `extension/`: Chrome extension for browser event capturing.
 - `archivolt.json`: The local data store for your annotations.
+
+### Detailed Documentation
+
+- [Overview & Tech Stack](docs/overview.md)
+- [Architecture](docs/architecture.md) — Backend DDD modules, frontend, Chrome extension, data flow
+- [Commands](docs/commands.md) — Full CLI reference
+- [Testing](docs/testing.md) — How to run and write tests
+- [Conventions](docs/conventions.md) — Coding standards and patterns
+- [Workflow (中文)](docs/WORKFLOW.zh-TW.md)
 
 ---
 

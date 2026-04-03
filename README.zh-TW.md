@@ -99,7 +99,17 @@
   - `Application`：匯入、管理 vFK 以及導出相關服務。
   - `Infrastructure`：JSON 持久化、各類導出器 (Eloquent, Prisma 等) 以及檔案寫入器。
 - `web/`：基於 React + ReactFlow 的前端應用程式。
+- `extension/`：Chrome 擴充功能，用於捕捉瀏覽器事件。
 - `archivolt.json`：儲存標註資料的本地資料庫。
+
+### 詳細文件
+
+- [專案概覽與技術棧](docs/overview.md)
+- [架構設計](docs/architecture.md) — 後端 DDD 模組、前端、Chrome 擴充、資料流
+- [指令參考](docs/commands.md) — 完整的 CLI 指令說明
+- [測試說明](docs/testing.md) — 如何執行與撰寫測試
+- [開發規範](docs/conventions.md) — 代碼風格與設計模式
+- [工作流程](docs/WORKFLOW.zh-TW.md)
 
 ---
 
