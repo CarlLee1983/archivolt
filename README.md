@@ -16,7 +16,9 @@ In many legacy systems, databases have numerous "implicit relationships"—colum
   - **Prisma**: Generates `schema.prisma` with datasource and model relations.
   - **DBML**: Exports to [dbdiagram.io](https://dbdiagram.io) compatible format.
   - **Mermaid**: Generates ER diagram syntax for embedding in Markdown documentation.
-- **Query Recording**: Run a TCP proxy to capture live database queries from your application — no DB credentials needed, just point your app at the proxy port.
+- **Query Recording & Chunking**: Run a TCP proxy to capture live database queries. Automatically groups queries into logical "chunks" based on interaction time and browser events.
+- **Chrome Extension Integration**: Capture browser events (clicks, fetch, navigation) to sync with database recording for end-to-end debugging.
+- **Archivolt Doctor**: Built-in diagnostic tool to verify environment health, dependencies, and data integrity with interactive auto-fix suggestions.
 - **Powerful CLI**: Export your annotated schema directly to files or integrate with Laravel projects via Artisan.
 - **Real-time Persistence**: Changes are saved instantly to a local `archivolt.json`, which serves as a single source of truth that is also LLM-readable.
 
