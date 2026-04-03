@@ -132,8 +132,20 @@ describe('buildChunks', () => {
     const queries = [makeQuery({ timestamp: 1000 })]
     const markers = [makeMarker(2000, '/logout')]
     const chunks = buildChunks(queries, markers, DEFAULT_CONFIG)
-    expect(chunks).toHaveLength(1)
+    expect(chunks).toHaveLength(2)
     expect(chunks[0].queries).toHaveLength(1)
+    expect(chunks[1].marker?.url).toBe('/logout')
+    expect(chunks[1].queries).toHaveLength(0)
+  })
+
+  it('assigns pattern marker for marker-only chunks with no queries', () => {
+    const markers = [makeMarker(1000, '/login'), makeMarker(2000, '/dashboard')]
+    const chunks = buildChunks([], markers, DEFAULT_CONFIG)
+    expect(chunks).toHaveLength(2)
+    expect(chunks[0].pattern).toBe('marker')
+    expect(chunks[0].queries).toHaveLength(0)
+    expect(chunks[1].pattern).toBe('marker')
+    expect(chunks[1].queries).toHaveLength(0)
   })
 
   it('handles consecutive markers', () => {
@@ -144,13 +156,16 @@ describe('buildChunks', () => {
     ]
     const markers = [
       makeMarker(1000, '/page-a'),
+      makeMarker(1050, '/no-query-page'),
       makeMarker(1100, '/page-b'),
     ]
     const chunks = buildChunks(queries, markers, DEFAULT_CONFIG)
-    expect(chunks).toHaveLength(2)
+    expect(chunks).toHaveLength(3)
     expect(chunks[0].marker?.url).toBe('/page-a')
     expect(chunks[0].queries).toHaveLength(2)
-    expect(chunks[1].marker?.url).toBe('/page-b')
-    expect(chunks[1].queries).toHaveLength(1)
+    expect(chunks[1].marker?.url).toBe('/no-query-page')
+    expect(chunks[1].queries).toHaveLength(0)
+    expect(chunks[2].marker?.url).toBe('/page-b')
+    expect(chunks[2].queries).toHaveLength(1)
   })
 })

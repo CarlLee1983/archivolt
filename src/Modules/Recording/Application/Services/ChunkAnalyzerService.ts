@@ -38,7 +38,7 @@ export class ChunkAnalyzerService {
     const operations: OperationEntry[] = chunks.map((chunk, index) => {
       if (chunk.pattern === 'read') readOps++
       else if (chunk.pattern === 'write') writeOps++
-      else mixedOps++
+      else if (chunk.pattern === 'mixed') mixedOps++
 
       if (!chunk.marker) silenceSplit++
 
@@ -71,7 +71,7 @@ export class ChunkAnalyzerService {
         tables: chunk.tables,
         sqlSummaries: extractSqlSummaries(chunk.queries),
         inferredRelations: chunkRelations,
-        semantic: inferSemantic(chunk.operations, chunk.tables),
+        semantic: inferSemantic(chunk.queries),
         requestBody,
       }
     })

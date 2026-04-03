@@ -75,6 +75,34 @@ describe('ChunkAnalyzerService', () => {
     expect(manifest.operations[0].label).toBe('navigate /products — "商品列表"')
   })
 
+  it('preserves chunks with only markers and no queries', () => {
+    const queries: CapturedQuery[] = []
+    const markers = [
+      makeMarker({ timestamp: 1000, url: '/products', action: 'navigate', label: '商品列表' }),
+    ]
+    const manifest = service.analyze(mockSession, queries, markers)
+
+    expect(manifest.stats.totalChunks).toBe(1)
+    expect(manifest.operations[0].label).toBe('navigate /products — "商品列表"')
+    expect(manifest.operations[0].semantic).toBe('(no database operations)')
+    expect(manifest.operations[0].pattern).toBe('marker')
+  })
+
+  it('does not count marker-only chunks in readOps/writeOps/mixedOps', () => {
+    const queries = [
+      makeQuery({ timestamp: 1010, sql: 'SELECT * FROM products', tables: ['products'], operation: 'SELECT' }),
+    ]
+    const markers = [
+      makeMarker({ timestamp: 1000, url: '/products', action: 'navigate' }),
+      makeMarker({ timestamp: 2000, url: '/logout', action: 'navigate' }),
+    ]
+    const manifest = service.analyze(mockSession, queries, markers)
+    expect(manifest.stats.totalChunks).toBe(2)
+    expect(manifest.stats.readOps).toBe(1)
+    expect(manifest.stats.writeOps).toBe(0)
+    expect(manifest.stats.mixedOps).toBe(0)
+  })
+
   it('counts silence-based splits', () => {
     const queries = [
       makeQuery({ timestamp: 1000, sql: 'SELECT 1', tables: ['a'], operation: 'SELECT' }),

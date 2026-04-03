@@ -1,7 +1,7 @@
 import type { CapturedQuery } from '@/Modules/Recording/Domain/Session'
 import type { OperationMarker } from '@/Modules/Recording/Domain/OperationMarker'
 
-export type ChunkPattern = 'read' | 'write' | 'mixed'
+export type ChunkPattern = 'read' | 'write' | 'mixed' | 'marker'
 
 export interface QueryChunk {
   readonly id: string
@@ -24,6 +24,7 @@ type TimelineEntry =
   | { readonly type: 'marker'; readonly timestamp: number; readonly marker: OperationMarker }
 
 function determinePattern(queries: readonly CapturedQuery[]): ChunkPattern {
+  if (queries.length === 0) return 'marker'
   const ops = new Set(queries.map((q) => q.operation))
   const hasRead = ops.has('SELECT')
   const hasWrite = ops.has('INSERT') || ops.has('UPDATE') || ops.has('DELETE')
@@ -38,14 +39,16 @@ function finalizeChunk(
   marker: OperationMarker | undefined,
   index: number,
 ): QueryChunk | null {
-  if (queries.length === 0) return null
+  if (queries.length === 0 && !marker) return null
   const tables = [...new Set(queries.flatMap((q) => q.tables))].sort()
   const operations = [...new Set(queries.map((q) => q.operation))].sort()
+  const startTime = queries.length > 0 ? queries[0].timestamp : marker!.timestamp
+  const endTime = queries.length > 0 ? queries[queries.length - 1].timestamp : marker!.timestamp
   return {
-    id: `chunk_${queries[0].timestamp}_${index}`,
+    id: `chunk_${startTime}_${index}`,
     sessionId,
-    startTime: queries[0].timestamp,
-    endTime: queries[queries.length - 1].timestamp,
+    startTime,
+    endTime,
     queries,
     tables,
     operations,
@@ -59,8 +62,6 @@ export function buildChunks(
   markers: readonly OperationMarker[],
   config: ChunkConfig,
 ): readonly QueryChunk[] {
-  if (queries.length === 0) return []
-
   const timeline: TimelineEntry[] = [
     ...queries.map((q) => ({ type: 'query' as const, timestamp: q.timestamp, query: q })),
     ...markers.map((m) => ({ type: 'marker' as const, timestamp: m.timestamp, marker: m })),
@@ -103,11 +104,13 @@ export function buildChunks(
     lastQueryTimestamp = query.timestamp
   }
 
-  if (currentQueries.length > 0) {
-    const sessionId = currentQueries[0].sessionId
-    const chunk = finalizeChunk(sessionId, currentQueries, currentMarker, chunks.length)
-    if (chunk) chunks.push(chunk)
-  }
+  const lastChunk = finalizeChunk(
+    markers[0]?.sessionId || queries[0]?.sessionId,
+    currentQueries,
+    currentMarker,
+    chunks.length,
+  )
+  if (lastChunk) chunks.push(lastChunk)
 
   return chunks
 }

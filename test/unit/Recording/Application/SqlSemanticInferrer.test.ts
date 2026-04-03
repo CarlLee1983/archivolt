@@ -38,27 +38,38 @@ describe('skeletonizeSql', () => {
 
 describe('inferSemantic', () => {
   it('returns SQL verb + table for single SELECT', () => {
-    expect(inferSemantic(['SELECT'], ['products'])).toBe('SELECT products')
+    const queries = [{ operation: 'SELECT', tables: ['products'] }] as any
+    expect(inferSemantic(queries)).toBe('SELECT products')
   })
 
   it('returns SQL verb + tables for multi-table SELECT', () => {
-    expect(inferSemantic(['SELECT'], ['products', 'categories'])).toBe(
-      'SELECT products, categories',
-    )
+    const queries = [{ operation: 'SELECT', tables: ['products', 'categories'] }] as any
+    expect(inferSemantic(queries)).toBe('SELECT products, categories')
   })
 
   it('returns SQL verb + table for INSERT', () => {
-    expect(inferSemantic(['INSERT'], ['orders'])).toBe('INSERT orders')
+    const queries = [{ operation: 'INSERT', tables: ['orders'] }] as any
+    expect(inferSemantic(queries)).toBe('INSERT orders')
   })
 
   it('joins multiple operations with semicolon', () => {
-    expect(inferSemantic(['INSERT', 'UPDATE'], ['orders', 'inventory'])).toBe(
-      'INSERT orders, inventory; UPDATE orders, inventory',
-    )
+    const queries = [
+      { operation: 'INSERT', tables: ['orders'] },
+      { operation: 'UPDATE', tables: ['inventory'] },
+    ] as any
+    expect(inferSemantic(queries)).toBe('INSERT orders; UPDATE inventory')
   })
 
   it('deduplicates operations per table', () => {
-    expect(inferSemantic(['SELECT', 'SELECT'], ['users'])).toBe('SELECT users')
+    const queries = [
+      { operation: 'SELECT', tables: ['users'] },
+      { operation: 'SELECT', tables: ['users'] },
+    ] as any
+    expect(inferSemantic(queries)).toBe('SELECT users')
+  })
+
+  it('returns (no database operations) for empty query list', () => {
+    expect(inferSemantic([])).toBe('(no database operations)')
   })
 })
 

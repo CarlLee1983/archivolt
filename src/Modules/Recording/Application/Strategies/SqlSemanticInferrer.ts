@@ -10,15 +10,19 @@ export function skeletonizeSql(sql: string): string {
     .replace(/\b\d+(\.\d+)?\b/g, '?')
 }
 
-export function inferSemantic(
-  operations: readonly string[],
-  tables: readonly string[],
-): string {
-  const uniqueOps = [...new Set(operations)]
-  if (uniqueOps.length === 1) {
-    return `${uniqueOps[0]} ${tables.join(', ')}`
+export function inferSemantic(queries: readonly CapturedQuery[]): string {
+  if (queries.length === 0) return '(no database operations)'
+
+  const opToTables = new Map<string, Set<string>>()
+  for (const q of queries) {
+    const tables = opToTables.get(q.operation) ?? new Set<string>()
+    for (const t of q.tables) tables.add(t)
+    opToTables.set(q.operation, tables)
   }
-  return uniqueOps.map((op) => `${op} ${tables.join(', ')}`).join('; ')
+
+  return [...opToTables.entries()]
+    .map(([op, tables]) => `${op} ${[...tables].join(', ')}`)
+    .join('; ')
 }
 
 export function buildLabel(marker: OperationMarker | undefined): string {
