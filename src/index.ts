@@ -24,6 +24,12 @@ async function start() {
     process.exit(0)
   }
 
+  if (args[0] === 'analyze') {
+    const { runAnalyzeCommand } = await import('@/CLI/AnalyzeCommand')
+    await runAnalyzeCommand(['analyze', ...args.slice(1)])
+    process.exit(0)
+  }
+
   const inputIndex = args.indexOf('--input')
   const reimport = args.includes('--reimport')
 
