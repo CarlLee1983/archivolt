@@ -18,6 +18,12 @@ async function start() {
     process.exit(0)
   }
 
+  if (args[0] === 'doctor') {
+    const { runDoctorCommand } = await import('@/Modules/Doctor/Presentation/DoctorCommand')
+    await runDoctorCommand(['doctor', ...args.slice(1)])
+    process.exit(0)
+  }
+
   const inputIndex = args.indexOf('--input')
   const reimport = args.includes('--reimport')
 
@@ -78,6 +84,26 @@ async function start() {
 📌 API:    http://localhost:${port}/api
 📊 Schema: ${schemaExists ? '✅ Loaded' : '❌ Not loaded (use --input to import)'}
 `)
+
+  // Doctor: 啟動時靜默檢查
+  try {
+    const { createChecks } = await import('@/Modules/Doctor/Presentation/DoctorCommand')
+    const { DoctorService } = await import('@/Modules/Doctor/Application/DoctorService')
+    const { DoctorReporter } = await import('@/Modules/Doctor/Infrastructure/DoctorReporter')
+    const { NoopPrompter } = await import('@/Modules/Doctor/Infrastructure/InteractivePrompter')
+
+    const checks = createChecks(process.cwd())
+    const service = new DoctorService(checks, new NoopPrompter())
+    const reporter = new DoctorReporter()
+    const results = await service.runAll()
+
+    const hasIssues = results.some((r) => r.severity !== 'ok')
+    if (hasIssues) {
+      reporter.reportSummaryOnly(results)
+    }
+  } catch {
+    // 靜默檢查失敗不影響啟動
+  }
 
   return server
 }
