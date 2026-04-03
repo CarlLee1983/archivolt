@@ -31,9 +31,14 @@ function ERCanvasInner() {
   const { 
     model, visibleGroups, tableFilter, selectTable, refreshModel, selectedTable, focusMode 
   } = useSchemaStore()
-  const { setCenter } = useReactFlow()
+  const { setCenter, fitBounds } = useReactFlow()
   const zoom = useStore(zoomSelector)
   const highlightTables = useRecordingStore((s) => getActiveChunkTables(s))
+  const activeChunk = useRecordingStore((s) => {
+    if (!s.activeChunkId) return null
+    return s.chunks.find((c) => c.id === s.activeChunkId) ?? null
+  })
+  const autoFocus = useRecordingStore((s) => s.autoFocus)
 
   const keyword = tableFilter.trim().toLowerCase()
 
@@ -76,19 +81,12 @@ function ERCanvasInner() {
         isDimmed: highlightTables ? !highlightTables.has(name) : false,
       } satisfies TableNodeData,
     }))
-    const allEdges = buildEdges(model).filter(
-      (e) => visibleTables.includes(e.source) && visibleTables.includes(e.target)
+    const playbackPattern = activeChunk?.pattern ?? null
+    const allEdges = buildEdges(model, playbackPattern, highlightTables).filter(
+      (e) => visibleTables.includes(e.source) && visibleTables.includes(e.target),
     )
-    const styledEdges = highlightTables
-      ? allEdges.map((edge) => {
-          const bothHighlighted = highlightTables.has(edge.source) && highlightTables.has(edge.target)
-          return bothHighlighted
-            ? { ...edge, style: { ...edge.style, stroke: '#60a5fa', strokeWidth: 3 } }
-            : { ...edge, style: { ...edge.style, opacity: 0.15 } }
-        })
-      : allEdges
-    return { layoutNodes: autoLayout(nodes, styledEdges), layoutEdges: styledEdges }
-  }, [model, visibleTables, isLowDetail, highlightTables])
+    return { layoutNodes: autoLayout(nodes, allEdges), layoutEdges: allEdges }
+  }, [model, visibleTables, isLowDetail, highlightTables, activeChunk?.pattern])
 
   const [nodes, setNodes, onNodesChange] = useNodesState(layoutNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(layoutEdges)
@@ -111,6 +109,29 @@ function ERCanvasInner() {
       }
     }
   }, [selectedTable, setCenter, nodes])
+
+  // Auto-focus: fit bounds to active chunk tables during playback
+  useEffect(() => {
+    if (!autoFocus || !highlightTables || highlightTables.size === 0) return
+    const targetNodes = nodes.filter((n) => highlightTables.has(n.id))
+    if (targetNodes.length === 0) return
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+    for (const n of targetNodes) {
+      const w = n.measured?.width ?? 200
+      const h = n.measured?.height ?? 100
+      minX = Math.min(minX, n.position.x)
+      minY = Math.min(minY, n.position.y)
+      maxX = Math.max(maxX, n.position.x + w)
+      maxY = Math.max(maxY, n.position.y + h)
+    }
+
+    const padding = 80
+    fitBounds(
+      { x: minX - padding, y: minY - padding, width: maxX - minX + padding * 2, height: maxY - minY + padding * 2 },
+      { duration: 600 },
+    )
+  }, [highlightTables, autoFocus, nodes, fitBounds])
 
   const [pendingConnection, setPendingConnection] = useState<{ source: string; target: string } | null>(null)
 
