@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 320px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 16px;
+    }
+    h1 { font-size: 14px; font-weight: 700; margin-bottom: 12px; color: #60a5fa; }
+    .field { margin-bottom: 12px; }
+    label { display: block; font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; font-weight: 600; }
+    input[type="text"] {
+      width: 100%;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 12px;
+      color: #e2e8f0;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      outline: none;
+    }
+    input[type="text"]:focus { border-color: #60a5fa; }
+    .btn {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-connect { background: #3b82f6; color: white; }
+    .btn-connect:hover { background: #2563eb; }
+    .btn-disconnect { background: #ef4444; color: white; }
+    .btn-disconnect:hover { background: #dc2626; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .status {
+      font-size: 11px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+    }
+    .status-connected { background: #166534; color: #86efac; border: 1px solid #22c55e33; }
+    .status-disconnected { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
+    .status-error { background: #7f1d1d; color: #fca5a5; border: 1px solid #ef444433; }
+  </style>
+</head>
+<body>
+  <h1>Archivolt Marker</h1>
+  <div id="status" class="status status-disconnected">尚未連線</div>
+  <div class="field">
+    <label>API 位址</label>
+    <input type="text" id="apiUrl" value="http://localhost:3100" />
+  </div>
+  <button id="actionBtn" class="btn btn-connect">開始側錄</button>
+  <script src="dist/popup.js" type="module"></script>
+</body>
+</html>
