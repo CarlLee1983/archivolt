@@ -2,6 +2,7 @@ import { PlanetCore, defineConfig } from '@gravito/core'
 import { buildConfig } from '../config/index'
 import { createGravitoServiceProvider } from '@/Shared/Infrastructure/Framework/GravitoServiceProviderAdapter'
 import { SchemaServiceProvider } from '@/Modules/Schema/Infrastructure/Providers/SchemaServiceProvider'
+import { RecordingServiceProvider } from '@/Modules/Recording/Infrastructure/Providers/RecordingServiceProvider'
 import { registerRoutes } from './routes'
 
 export async function bootstrap(port = 3100): Promise<PlanetCore> {
@@ -14,6 +15,7 @@ export async function bootstrap(port = 3100): Promise<PlanetCore> {
   const core = new PlanetCore(config)
 
   core.register(createGravitoServiceProvider(new SchemaServiceProvider()))
+  core.register(createGravitoServiceProvider(new RecordingServiceProvider()))
 
   await core.bootstrap()
 

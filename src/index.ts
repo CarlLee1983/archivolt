@@ -12,6 +12,12 @@ async function start() {
     process.exit(0)
   }
 
+  if (args[0] === 'record') {
+    const { runRecordCommand } = await import('@/CLI/RecordCommand')
+    await runRecordCommand(['record', ...args.slice(1)])
+    process.exit(0)
+  }
+
   const inputIndex = args.indexOf('--input')
   const reimport = args.includes('--reimport')
 

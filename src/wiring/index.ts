@@ -10,3 +10,5 @@ export const registerSchema = (core: PlanetCore): void => {
   const controller = new SchemaController(repo, exportService)
   registerSchemaRoutes(router, controller)
 }
+
+export { registerRecording } from './recording'
