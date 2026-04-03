@@ -16,6 +16,7 @@ In many legacy systems, databases have numerous "implicit relationships"—colum
   - **Prisma**: Generates `schema.prisma` with datasource and model relations.
   - **DBML**: Exports to [dbdiagram.io](https://dbdiagram.io) compatible format.
   - **Mermaid**: Generates ER diagram syntax for embedding in Markdown documentation.
+- **Query Recording**: Run a TCP proxy to capture live database queries from your application — no DB credentials needed, just point your app at the proxy port.
 - **Powerful CLI**: Export your annotated schema directly to files or integrate with Laravel projects via Artisan.
 - **Real-time Persistence**: Changes are saved instantly to a local `archivolt.json`, which serves as a single source of truth that is also LLM-readable.
 
@@ -26,7 +27,7 @@ In many legacy systems, databases have numerous "implicit relationships"—colum
 ### Prerequisites
 
 - [Bun](https://bun.sh) (v1.0.0 or higher)
-- [dbcli](https://github.com/intellectronica/dbcli) (to extract your database schema into JSON)
+- [dbcli](https://github.com/CarlLee1983/dbcli) (to extract your database schema into JSON)
 
 ### Installation
 
@@ -43,9 +44,13 @@ In many legacy systems, databases have numerous "implicit relationships"—colum
 ### Usage
 
 1. **Import your database schema**:
-   Archivolt consumes JSON output from [dbcli](https://github.com/intellectronica/dbcli).
+   Archivolt consumes JSON output from [dbcli](https://github.com/CarlLee1983/dbcli).
    ```bash
-   bun run dev --input path/to/dbcli/config.json
+   # Extract schema using dbcli
+   dbcli schema --format json > my-database.json
+
+   # Import into Archivolt
+   bun run dev --input my-database.json
    ```
    *Note: Use `--reimport` to update table/column information while preserving your existing annotations.*
 
@@ -56,7 +61,27 @@ In many legacy systems, databases have numerous "implicit relationships"—colum
    ```
    Open [http://localhost:5173](http://localhost:5173) in your browser.
 
-3. **Exporting via CLI**:
+3. **Record database queries**:
+   Archivolt can act as a TCP proxy between your application and the database, capturing all queries in real time without needing database credentials — authentication is handled directly between your app and the target DB.
+
+   ```bash
+   # Start recording — specify target DB directly
+   bun run dev record start --target localhost:3306
+
+   # Or read DB_HOST / DB_PORT from a .env file
+   bun run dev record start --from-env /path/to/.env --port 13306
+   ```
+
+   Then point your application's DB connection to `127.0.0.1:13306` (or the port you specified). Press `Ctrl+C` to stop.
+
+   ```bash
+   # Manage recording sessions
+   bun run dev record status              # Check if a recording is active
+   bun run dev record list                # List all sessions
+   bun run dev record summary <session-id> # View query stats for a session
+   ```
+
+4. **Exporting via CLI**:
    ```bash
    # Export to Laravel Eloquent models
    bun run dev export eloquent --laravel path/to/laravel-project

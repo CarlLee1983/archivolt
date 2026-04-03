@@ -1,73 +1,51 @@
-# React + TypeScript + Vite
+# 🎨 Archivolt Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The web-based visual interface for **Archivolt**, providing an interactive canvas to explore, group, and annotate database schemas.
 
-Currently, two official plugins are available:
+## ✨ Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **ER Visualization**: Interactive and zoomable canvas using [ReactFlow](https://reactflow.dev/).
+- **Table Nodes**: Display table columns, types, and constraints.
+- **Grouping**: Visually group related tables using grouping boxes.
+- **Marker Synchronization**: Correlate UI actions (via Archivolt Marker) with recorded SQL queries.
+- **Real-time Persistence**: Sync changes instantly to the backend API.
 
-## React Compiler
+## 🛠️ Technology Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Framework**: React 18+
+- **Build Tool**: Vite
+- **Styling**: Tailwind CSS
+- **State Management**: [Zustand](https://github.com/pmndrs/zustand)
+- **Canvas Engine**: [XYFlow (ReactFlow)](https://reactflow.dev/)
+- **Layout Engine**: [Dagre](https://github.com/dagrejs/dagre) (for automatic schema layout)
 
-## Expanding the ESLint configuration
+## 🚀 Development
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Installation
+```bash
+# From the root directory
+cd web
+bun install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Run Development Server
+```bash
+bun run dev
 ```
+The frontend will start at [http://localhost:5173](http://localhost:5173).
+
+### Build for Production
+```bash
+bun run build
+```
+
+## 🗺️ Project Structure
+
+- `src/components/Canvas`: Core ReactFlow implementation (edges, nodes, layout).
+- `src/stores`: Zustand state management for schema data and UI state.
+- `src/api`: API client to communicate with the Archivolt backend.
+- `src/types`: TypeScript definitions for the ER model and frontend state.
+
+## 📜 Proxy Configuration
+
+Vite is configured to proxy `/api` requests to `http://localhost:3100` (the default Archivolt API port). Ensure the backend server is running for full functionality.

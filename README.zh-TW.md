@@ -16,6 +16,7 @@
   - **Prisma**：生成包含資料源與模型關聯的 `schema.prisma`。
   - **DBML**：導出為相容於 [dbdiagram.io](https://dbdiagram.io) 的格式。
   - **Mermaid**：生成可嵌入 Markdown 文件的 ER 圖語法。
+- **查詢錄製**：運行 TCP 代理以捕捉應用程式的即時資料庫查詢 —— 無需資料庫憑據，只需將應用程式指向代理埠。
 - **強大的 CLI 指令**：直接將標註好的內容導出為檔案，或透過 Artisan 與 Laravel 專案深度整合。
 - **即時持久化**：所有變更會立即存入本地的 `archivolt.json`，這不僅是單一事實來源，也方便 LLM 讀取理解。
 
@@ -26,7 +27,7 @@
 ### 前置需求
 
 - [Bun](https://bun.sh) (v1.0.0 或以上版本)
-- [dbcli](https://github.com/intellectronica/dbcli) (用於將資料庫 Schema 提取為 JSON 格式)
+- [dbcli](https://github.com/CarlLee1983/dbcli) (用於將資料庫 Schema 提取為 JSON 格式)
 
 ### 安裝步驟
 
@@ -43,9 +44,13 @@
 ### 使用說明
 
 1. **匯入資料庫 Schema**：
-   Archivolt 使用 [dbcli](https://github.com/intellectronica/dbcli) 輸出的 JSON 檔案。
+   Archivolt 使用 [dbcli](https://github.com/CarlLee1983/dbcli) 輸出的 JSON 檔案。
    ```bash
-   bun run dev --input path/to/dbcli/config.json
+   # 使用 dbcli 提取 Schema
+   dbcli schema --format json > my-database.json
+
+   # 匯入 Archivolt
+   bun run dev --input my-database.json
    ```
    *註：使用 `--reimport` 旗標可以在更新資料表/欄位資訊的同時，保留你已完成的標註。*
 
@@ -56,7 +61,27 @@
    ```
    接著在瀏覽器中開啟 [http://localhost:5173](http://localhost:5173)。
 
-3. **使用 CLI 導出**：
+3. **錄製資料庫查詢**：
+   Archivolt 可以作為應用程式與資料庫之間的 TCP 代理，即時捕捉所有查詢而無需資料庫憑據 —— 驗證過程由您的應用程式與目標資料庫直接處理。
+
+   ```bash
+   # 開始錄製 —— 直接指定目標資料庫
+   bun run dev record start --target localhost:3306
+
+   # 或從 .env 檔案讀取 DB_HOST / DB_PORT
+   bun run dev record start --from-env /path/to/.env --port 13306
+   ```
+
+   接著將應用程式的資料庫連線指向 `127.0.0.1:13306`（或您指定的埠）。按下 `Ctrl+C` 停止。
+
+   ```bash
+   # 管理錄製會話
+   bun run dev record status              # 檢查錄製是否正在進行
+   bun run dev record list                # 列出所有會話
+   bun run dev record summary <session-id> # 查看會話的查詢統計
+   ```
+
+4. **使用 CLI 導出**：
    ```bash
    # 導出為 Laravel Eloquent 模型
    bun run dev export eloquent --laravel path/to/laravel-project

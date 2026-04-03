@@ -4,7 +4,7 @@ This file provides guidance for AI coding agents and assistants when working wit
 
 ## Project Overview
 
-Archivolt 是一個本地端 ER 視覺化標註工具，幫助開發者理解、標註並匯出老舊資料庫中的隱含關聯（Virtual Foreign Keys）。後端為 Bun + TypeScript API server，前端為 React + ReactFlow 互動式介面。
+Archivolt 是一個本地端 ER 視覺化標註工具，幫助開發者理解、標註並匯出老舊資料庫中的隱含關聯（Virtual Foreign Keys）。後端為 Bun + TypeScript API server，前端為 React + ReactFlow 互動式介面。**新增功能：支援透過 TCP 代理進行查詢錄製與 SQL 分析，自動推斷關聯。**
 
 ## Commands
 
@@ -20,22 +20,19 @@ bun run dev:all          # API :3100 + Web :5173
 bun run dev              # 後端 API server（hot reload）
 bun run dev:web          # 前端 React dev server
 
+# 查詢錄製 (TCP Proxy)
+bun run dev record start --target localhost:3306 --port 13306
+bun run dev record status
+bun run dev record list
+bun run dev record summary <session-id>
+
+# 匯出資料 (CLI Export)
+bun run dev export eloquent --laravel /path/to/laravel
+bun run dev export mermaid --output ./docs/schema
+
 # 品質檢查
 bun run check            # typecheck + lint + test（全部）
-bun run typecheck        # tsc --noEmit
-bun run lint             # biome lint src test
-bun run lint:fix         # biome lint --fix
-bun run format           # biome format --write
-
-# 測試
-bun run test             # vitest run（單次執行）
-bun run test:watch       # vitest（watch 模式）
-bun run test:coverage    # vitest --coverage
-bunx vitest run test/unit/Domain/ERModel.test.ts  # 執行單一測試檔
-
-# 建置與啟動
-bun run build            # 輸出到 dist/
-bun run start            # 執行 dist/index.js
+...
 ```
 
 ## Architecture
@@ -50,31 +47,28 @@ src/Modules/Schema/
   Application/     Use cases（ImportSchemaService, ExportService, VirtualFKService）
   Infrastructure/  技術實作（JsonFileRepository, Exporters, Writers）
   Presentation/    HTTP API（SchemaController, Schema.routes.ts）
+
+src/Modules/Recording/
+  Domain/          ProtocolParser, Session 實體
+  Application/     RecordingService, QueryAnalyzer（SQL 語句解析與推薦）
+  Infrastructure/  TcpProxy (TCP 代理實作), MysqlProtocolParser, RecordingRepository
+  Presentation/    RecordingController, Recording.routes.ts
 ```
 
 - **Domain → Application → Infrastructure**：嚴格分層，Domain 層不依賴框架
-- **Gravito 框架**：透過 `src/Shared/Infrastructure/Framework/` 的 adapter 隔離
-- **DI 容器**：`SchemaServiceProvider` 註冊所有服務為 singleton
-- **持久層**：單一 `archivolt.json` 檔案，由 `JsonFileRepository` 讀寫
+...
+- **持久層**：單一 `archivolt.json` 檔案，由 `JsonFileRepository` 讀寫；錄製資料存放在 `data/recordings/`
 - **匯出器**：實作 `IExporter` 介面（Eloquent, Prisma, DBML, Mermaid）
-- **寫入器**：實作 `IFileWriter` 介面（Stdout, Directory, LaravelArtisan）
-
-### 前端 (`web/`)
-
-- **React + Vite + Tailwind CSS**
-- **ReactFlow/XYFlow**：互動式 ER 圖表
-- **Zustand**：狀態管理（`stores/schemaStore.ts`）
-- **Dagre**：自動佈局演算法
-- API proxy：Vite dev server 將 `/api` 轉發到 `localhost:3100`
-
+...
 ### 資料流
 
-1. `dbcli` 匯出 JSON → `ImportSchemaService` 轉換為 ERModel
+1. `dbcli schema --format json` 匯出 → `ImportSchemaService` 轉換為 ERModel
 2. `JsonFileRepository` 存入 `archivolt.json`
 3. 前端透過 REST API 取得 schema，ReactFlow 渲染
-4. 使用者標註 vFK → API 更新 → 持久化
-5. CLI `export` 指令 → `ExportService` → `IExporter` → `IFileWriter`
-
+4. **查詢錄製**：`TcpProxy` 攔截 SQL → `ProtocolParser` 解析 → `RecordingService` 儲存並透過 `QueryAnalyzer` 推斷隱性關聯
+5. 使用者標註 vFK → API 更新 → 持久化
+6. CLI `export` 指令 → `ExportService` → `IExporter` → `IFileWriter`
+...
 ## Conventions
 
 - **Path alias**：`@/*` 對應 `./src/*`（backend 與 vitest 皆支援）
