@@ -5,6 +5,8 @@ import type { Table } from '@/types/er-model'
 export interface TableNodeData {
   table: Table
   isLowDetail?: boolean
+  isHighlighted?: boolean | null
+  isDimmed?: boolean
   [key: string]: unknown
 }
 
@@ -17,7 +19,7 @@ function KeyIcon() {
 }
 
 function TableNodeComponent({ data, selected }: NodeProps) {
-  const { table, isLowDetail } = data as TableNodeData
+  const { table, isLowDetail, isHighlighted, isDimmed } = data as TableNodeData
   const fkColumns = new Set([
     ...table.foreignKeys.flatMap((fk) => fk.columns),
     ...table.virtualForeignKeys.flatMap((vfk) => vfk.columns),
@@ -28,10 +30,10 @@ function TableNodeComponent({ data, selected }: NodeProps) {
       className={`rounded-xl border transition-all duration-300 ${
         selected
           ? 'border-primary ring-4 ring-primary/30 scale-[1.05] z-50 shadow-[0_0_40px_rgba(59,130,246,0.5)]'
-          : isLowDetail 
+          : isLowDetail
             ? 'border-white/40 bg-[#1e293b] shadow-2xl scale-[0.95]' // Solid high-contrast block when zoomed out
             : 'border-white/10 backdrop-blur-md bg-white/5 hover:border-white/30 shadow-glass'
-      } ${isLowDetail ? 'min-w-[180px]' : 'min-w-[240px]'}`}
+      } ${isLowDetail ? 'min-w-[180px]' : 'min-w-[240px]'} ${isDimmed ? 'opacity-15' : ''} ${isHighlighted === true ? 'ring-2 ring-primary/60 shadow-[0_0_20px_rgba(59,130,246,0.3)]' : ''}`}
     >
       {/* Visual Indicator for LOD mode */}
       {isLowDetail && (

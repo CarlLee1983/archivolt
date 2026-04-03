@@ -15,6 +15,7 @@ import {
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { useSchemaStore, tableMatchesFilter, getNeighborTables } from '@/stores/schemaStore'
+import { useRecordingStore, getActiveChunkTables } from '@/stores/recordingStore'
 import { TableNode, type TableNodeData } from './TableNode'
 import { buildEdges } from './edges'
 import { autoLayout } from './layoutEngine'
@@ -31,6 +32,7 @@ function ERCanvasInner() {
   } = useSchemaStore()
   const { setCenter } = useReactFlow()
   const zoom = useStore(zoomSelector)
+  const highlightTables = useRecordingStore((s) => getActiveChunkTables(s))
 
   const keyword = tableFilter.trim().toLowerCase()
 
@@ -66,16 +68,26 @@ function ERCanvasInner() {
       id: name,
       type: 'tableNode',
       position: { x: 0, y: 0 },
-      data: { 
+      data: {
         table: model.tables[name],
-        isLowDetail // Pass LOD state to node
+        isLowDetail,
+        isHighlighted: highlightTables ? highlightTables.has(name) : null,
+        isDimmed: highlightTables ? !highlightTables.has(name) : false,
       } satisfies TableNodeData,
     }))
     const allEdges = buildEdges(model).filter(
       (e) => visibleTables.includes(e.source) && visibleTables.includes(e.target)
     )
-    return { layoutNodes: autoLayout(nodes, allEdges), layoutEdges: allEdges }
-  }, [model, visibleTables, isLowDetail])
+    const styledEdges = highlightTables
+      ? allEdges.map((edge) => {
+          const bothHighlighted = highlightTables.has(edge.source) && highlightTables.has(edge.target)
+          return bothHighlighted
+            ? { ...edge, style: { ...edge.style, stroke: '#60a5fa', strokeWidth: 3 } }
+            : { ...edge, style: { ...edge.style, opacity: 0.15 } }
+        })
+      : allEdges
+    return { layoutNodes: autoLayout(nodes, styledEdges), layoutEdges: styledEdges }
+  }, [model, visibleTables, isLowDetail, highlightTables])
 
   const [nodes, setNodes, onNodesChange] = useNodesState(layoutNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(layoutEdges)
