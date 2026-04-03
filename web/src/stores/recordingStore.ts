@@ -21,6 +21,8 @@ interface RecordingState {
   playing: boolean
   playbackSpeed: PlaybackSpeed
   playbackTimerId: ReturnType<typeof setTimeout> | null
+  autoFocus: boolean
+  toggleAutoFocus: () => void
   play: () => void
   pause: () => void
   stepNext: () => void
@@ -68,6 +70,8 @@ export const useRecordingStore = create<RecordingState>((set, get) => ({
   playing: false,
   playbackSpeed: 1,
   playbackTimerId: null,
+  autoFocus: true,
+  toggleAutoFocus: () => set((s) => ({ autoFocus: !s.autoFocus })),
 
   play: () => {
     const { chunks, activeChunkId, playing, playbackSpeed } = get()
