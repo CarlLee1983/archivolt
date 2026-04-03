@@ -78,7 +78,14 @@ export class SchemaController {
     const model = await this.repo.load()
     if (!model) return ctx.json(ApiResponse.error('NOT_FOUND', 'No schema loaded'), 404)
     const body = await ctx.getBody<{ groups: ERModel['groups'] }>()
-    const updated: ERModel = { ...model, groups: body.groups }
+
+    // Mark all user-submitted groups as manually edited
+    const markedGroups: ERModel['groups'] = {}
+    for (const [key, group] of Object.entries(body.groups)) {
+      markedGroups[key] = { ...group, auto: false }
+    }
+
+    const updated: ERModel = { ...model, groups: markedGroups }
     await this.repo.save(updated)
     return ctx.json(ApiResponse.success(updated.groups))
   }
