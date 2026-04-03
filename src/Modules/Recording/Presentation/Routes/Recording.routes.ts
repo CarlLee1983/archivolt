@@ -8,5 +8,9 @@ export function registerRecordingRoutes(router: IModuleRouter, controller: Recor
     r.get('/recording/status', (ctx) => controller.status(ctx))
     r.get('/recordings', (ctx) => controller.list(ctx))
     r.get('/recordings/:id', (ctx) => controller.getSession(ctx))
+    r.post('/recording/marker', (ctx) => controller.addMarker(ctx))
+    r.get('/recordings/:id/markers', (ctx) => controller.getMarkers(ctx))
+    r.get('/recordings/:id/chunks', (ctx) => controller.getChunks(ctx))
+    r.get('/recordings/:id/chunks/:chunkId/queries', (ctx) => controller.getChunkQueries(ctx))
   })
 }
