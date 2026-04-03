@@ -1,6 +1,9 @@
 import { RecordingRepository } from '@/Modules/Recording/Infrastructure/Persistence/RecordingRepository'
 import { RecordingService } from '@/Modules/Recording/Application/Services/RecordingService'
-import { MysqlProtocolParser } from '@/Modules/Recording/Infrastructure/Proxy/MysqlProtocolParser'
+import {
+  detectProtocol,
+  resolveParser,
+} from '@/Modules/Recording/Infrastructure/Proxy/ProtocolDetector'
 import path from 'node:path'
 import { readFileSync } from 'node:fs'
 
@@ -11,6 +14,7 @@ export interface RecordArgs {
   readonly listenPort: number
   readonly fromEnv?: string
   readonly sessionId?: string
+  readonly protocol?: 'mysql' | 'postgres'
 }
 
 const VALID_SUBCOMMANDS = ['start', 'stop', 'status', 'list', 'summary'] as const
@@ -52,10 +56,14 @@ export function parseRecordArgs(argv: string[]): RecordArgs {
 
   const sessionId = subcommand === 'summary' ? rest[1] : undefined
 
-  return { subcommand, targetHost, targetPort, listenPort, fromEnv, sessionId }
+  const protocolIdx = rest.indexOf('--protocol')
+  const protocol =
+    protocolIdx !== -1 ? (rest[protocolIdx + 1] as 'mysql' | 'postgres') : undefined
+
+  return { subcommand, targetHost, targetPort, listenPort, fromEnv, sessionId, protocol }
 }
 
-function parseEnvFile(envPath: string): { host: string; port: number } {
+function parseEnvFile(envPath: string): { host: string; port: number; driver?: string } {
   const text = readFileSync(envPath, 'utf-8')
   const lines = text.split('\n')
   const env: Record<string, string> = {}
@@ -72,7 +80,8 @@ function parseEnvFile(envPath: string): { host: string; port: number } {
 
   const host = env.DB_HOST ?? 'localhost'
   const port = Number.parseInt(env.DB_PORT ?? '3306', 10)
-  return { host, port }
+  const driver = env.DB_CONNECTION ?? env.DB_DRIVER
+  return { host, port, driver }
 }
 
 export async function runRecordCommand(argv: string[]): Promise<void> {
@@ -80,18 +89,27 @@ export async function runRecordCommand(argv: string[]): Promise<void> {
   const recordingsDir =
     process.env.ARCHIVOLT_RECORDINGS_DIR ?? path.resolve(process.cwd(), 'data/recordings')
   const repo = new RecordingRepository(recordingsDir)
-  const service = new RecordingService(repo, new MysqlProtocolParser())
 
   switch (args.subcommand) {
     case 'start': {
       let targetHost = args.targetHost ?? 'localhost'
       let targetPort = args.targetPort ?? 3306
+      let envDriver: string | undefined
 
       if (args.fromEnv) {
         const envConfig = parseEnvFile(args.fromEnv)
         targetHost = envConfig.host
         targetPort = envConfig.port
+        envDriver = envConfig.driver
       }
+
+      const protocol = detectProtocol({
+        targetPort,
+        explicit: args.protocol,
+        envDriver,
+      })
+      const parser = resolveParser(protocol)
+      const service = new RecordingService(repo, parser)
 
       const session = await service.start({
         listenPort: args.listenPort,
@@ -103,6 +121,7 @@ export async function runRecordCommand(argv: string[]): Promise<void> {
 Recording Started
 
 Session:  ${session.id}
+Protocol: ${protocol}
 Proxy:    127.0.0.1:${service.proxyPort}
 Target:   ${targetHost}:${targetPort}
 
