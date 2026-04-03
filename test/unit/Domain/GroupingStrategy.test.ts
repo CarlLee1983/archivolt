@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import type { Table } from '@/Modules/Schema/Domain/ERModel'
 import type { SuggestedRelation } from '@/Modules/Schema/Domain/RelationInferrer'
-import { computeGroups } from '@/Modules/Schema/Domain/GroupingStrategy'
+import { computeGroups, mergeGroupsForReimport } from '@/Modules/Schema/Domain/GroupingStrategy'
 
 function makeTable(
   name: string,
@@ -155,5 +155,37 @@ describe('computeGroups', () => {
     for (const g of allGroups) {
       expect(g.tables.length).toBeLessThanOrEqual(20)
     }
+  })
+})
+
+describe('mergeGroupsForReimport', () => {
+  const tables: Record<string, Table> = {
+    orders: { name: 'orders', columns: [], rowCount: 0, engine: 'InnoDB', primaryKey: ['id'], foreignKeys: [], virtualForeignKeys: [] },
+    users: { name: 'users', columns: [], rowCount: 0, engine: 'InnoDB', primaryKey: ['id'], foreignKeys: [], virtualForeignKeys: [] },
+    products: { name: 'products', columns: [], rowCount: 0, engine: 'InnoDB', primaryKey: ['id'], foreignKeys: [], virtualForeignKeys: [] },
+    logs: { name: 'logs', columns: [], rowCount: 0, engine: 'InnoDB', primaryKey: ['id'], foreignKeys: [], virtualForeignKeys: [] },
+  }
+
+  it('preserves locked groups and recomputes the rest', () => {
+    const existingGroups = {
+      '訂單': { name: '訂單', tables: ['orders'], auto: false },
+      'Auto': { name: 'Auto', tables: ['users', 'products'], auto: true },
+    }
+    const result = mergeGroupsForReimport(tables, existingGroups, [])
+    expect(result['訂單']).toBeDefined()
+    expect(result['訂單'].tables).toContain('orders')
+    expect(result['訂單'].auto).toBe(false)
+    // orders should NOT appear in auto groups
+    const autoTables = Object.values(result).filter(g => g.auto).flatMap(g => [...g.tables])
+    expect(autoTables).not.toContain('orders')
+  })
+
+  it('drops locked tables that no longer exist', () => {
+    const existingGroups = {
+      '手動': { name: '手動', tables: ['orders', 'deleted_table'], auto: false },
+    }
+    const result = mergeGroupsForReimport(tables, existingGroups, [])
+    expect(result['手動'].tables).toContain('orders')
+    expect(result['手動'].tables).not.toContain('deleted_table')
   })
 })

@@ -328,3 +328,32 @@ export function computeGroups(
 
   return result
 }
+
+export function mergeGroupsForReimport(
+  tables: Record<string, Table>,
+  existingGroups: Record<string, Group>,
+  suggestions: readonly SuggestedRelation[],
+): Record<string, Group> {
+  // 1. Preserve locked groups (auto: false), only keep tables that still exist
+  const locked: Record<string, Group> = {}
+  const lockedTables = new Set<string>()
+  for (const [name, group] of Object.entries(existingGroups)) {
+    if (!group.auto) {
+      const validTables = group.tables.filter((t) => t in tables)
+      if (validTables.length > 0) {
+        locked[name] = { ...group, tables: validTables }
+        for (const t of validTables) lockedTables.add(t)
+      }
+    }
+  }
+
+  // 2. Compute auto groups for remaining tables
+  const remainingTables: Record<string, Table> = {}
+  for (const [name, table] of Object.entries(tables)) {
+    if (!lockedTables.has(name)) remainingTables[name] = table
+  }
+  const autoGroups = computeGroups(remainingTables, suggestions)
+
+  // 3. Merge
+  return { ...locked, ...autoGroups }
+}

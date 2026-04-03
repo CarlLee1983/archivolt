@@ -58,6 +58,9 @@ async function start() {
     if (existingModel && !reimport) {
       console.log('⚡ archivolt.json already exists. Use --reimport to update schema while preserving annotations.')
     } else if (existingModel && reimport) {
+      const { mergeGroupsForReimport } = await import('@/Modules/Schema/Domain/GroupingStrategy')
+      const { inferRelations } = await import('@/Modules/Schema/Domain/RelationInferrer')
+
       const freshModel = importSchema(dbcliJson)
       const mergedTables: Record<string, any> = {}
       for (const [name, freshTable] of Object.entries(freshModel.tables)) {
@@ -67,12 +70,27 @@ async function start() {
           virtualForeignKeys: existing ? existing.virtualForeignKeys : freshTable.virtualForeignKeys,
         }
       }
+
+      const suggestions = inferRelations(mergedTables)
+      const mergedGroups = mergeGroupsForReimport(mergedTables, existingModel.groups, suggestions)
+
+      const lockedCount = Object.values(mergedGroups).filter((g) => !g.auto).length
+      const autoCount = Object.values(mergedGroups).filter((g) => g.auto).length
+
       await repo.save({
         ...freshModel,
         tables: mergedTables,
-        groups: existingModel.groups,
+        groups: mergedGroups,
       })
       console.log(`✅ Schema reimported from ${inputPath} (annotations preserved)`)
+      if (lockedCount > 0) {
+        const lockedNames = Object.values(mergedGroups)
+          .filter((g) => !g.auto)
+          .map((g) => g.name)
+          .join(', ')
+        console.log(`🔒 Preserved ${lockedCount} locked groups: ${lockedNames}`)
+      }
+      console.log(`🔄 Re-computed ${autoCount} auto groups`)
     } else {
       const model = importSchema(dbcliJson)
       await repo.save(model)
