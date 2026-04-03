@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { createMarker, type OperationMarker } from '@/Modules/Recording/Domain/OperationMarker'
+import { createMarker } from '@/Modules/Recording/Domain/OperationMarker'
 
 describe('createMarker', () => {
   it('creates a marker with timestamp and unique id', () => {

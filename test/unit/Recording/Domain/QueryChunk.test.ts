@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { buildChunks, type QueryChunk } from '@/Modules/Recording/Domain/QueryChunk'
-import { createCapturedQuery, type CapturedQuery } from '@/Modules/Recording/Domain/Session'
-import { createMarker, type OperationMarker } from '@/Modules/Recording/Domain/OperationMarker'
+import { buildChunks } from '@/Modules/Recording/Domain/QueryChunk'
+import type { CapturedQuery } from '@/Modules/Recording/Domain/Session'
+import type { OperationMarker } from '@/Modules/Recording/Domain/OperationMarker'
 
 function makeQuery(overrides: {
   timestamp: number
