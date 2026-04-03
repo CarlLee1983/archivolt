@@ -1,7 +1,8 @@
 // web/src/components/Timeline/TimelinePanel.tsx
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRecordingStore } from '@/stores/recordingStore'
 import { ChunkCard } from './ChunkCard'
+import { PlaybackControls } from './PlaybackControls'
 
 export function TimelinePanel() {
   const {
@@ -16,6 +17,7 @@ export function TimelinePanel() {
   } = useRecordingStore()
 
   const [isOpen, setIsOpen] = useState(false)
+  const chunkListRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     fetchSessions()
@@ -26,6 +28,19 @@ export function TimelinePanel() {
       setIsOpen(true)
     }
   }, [sessions.length])
+
+  // Auto-scroll to active chunk during playback
+  useEffect(() => {
+    if (!activeChunkId || !chunkListRef.current) return
+    const activeEl = chunkListRef.current.querySelector(`[data-chunk-id="${activeChunkId}"]`)
+    activeEl?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+  }, [activeChunkId])
+
+  // Cleanup playback timer on unmount
+  const pause = useRecordingStore((s) => s.pause)
+  useEffect(() => {
+    return () => pause()
+  }, [pause])
 
   if (sessions.length === 0) return null
 
@@ -95,8 +110,11 @@ export function TimelinePanel() {
             </select>
           </div>
 
+          {/* Playback controls */}
+          <PlaybackControls />
+
           {/* Chunk list */}
-          <div className="flex-1 overflow-y-auto p-2 scroll-smooth">
+          <div ref={chunkListRef} className="flex-1 overflow-y-auto p-2 scroll-smooth">
             {loading && (
               <div className="flex items-center justify-center py-12">
                 <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -111,14 +129,15 @@ export function TimelinePanel() {
 
             {!loading &&
               chunks.map((chunk) => (
-                <ChunkCard
-                  key={chunk.id}
-                  chunk={chunk}
-                  isActive={activeChunkId === chunk.id}
-                  onClick={() =>
-                    setActiveChunk(activeChunkId === chunk.id ? null : chunk.id)
-                  }
-                />
+                <div key={chunk.id} data-chunk-id={chunk.id}>
+                  <ChunkCard
+                    chunk={chunk}
+                    isActive={activeChunkId === chunk.id}
+                    onClick={() =>
+                      setActiveChunk(activeChunkId === chunk.id ? null : chunk.id)
+                    }
+                  />
+                </div>
               ))}
           </div>
 
