@@ -1,0 +1,7 @@
+{"id":"mk_1712180001000_0","sessionId":"rec_mock_ecommerce","timestamp":1712180001000,"url":"/products","action":"navigate","label":"商品列表 - MyShop"}
+{"id":"mk_1712180002000_1","sessionId":"rec_mock_ecommerce","timestamp":1712180002000,"url":"/products","action":"request","target":"GET /api/products","request":{"method":"GET","url":"/api/products"}}
+{"id":"mk_1712180004000_2","sessionId":"rec_mock_ecommerce","timestamp":1712180004000,"url":"/products","action":"request","target":"GET /api/products/images","request":{"method":"GET","url":"/api/products/images"}}
+{"id":"mk_1712180010000_3","sessionId":"rec_mock_ecommerce","timestamp":1712180010000,"url":"/products/123","action":"navigate","label":"商品詳情 - Widget A"}
+{"id":"mk_1712180020000_4","sessionId":"rec_mock_ecommerce","timestamp":1712180020000,"url":"/products/123","action":"click","target":"button.add-to-cart \"加入購物車\""}
+{"id":"mk_1712180030000_5","sessionId":"rec_mock_ecommerce","timestamp":1712180030000,"url":"/checkout","action":"navigate","label":"結帳 - MyShop"}
+{"id":"mk_1712180040000_6","sessionId":"rec_mock_ecommerce","timestamp":1712180040000,"url":"/checkout","action":"request","target":"POST /api/orders","request":{"method":"POST","url":"/api/orders","body":"{\"productId\":5,\"qty\":2}"}}
