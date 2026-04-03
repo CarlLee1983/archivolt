@@ -11,6 +11,11 @@ describe('DbcliAvailableCheck', () => {
     const check = new DbcliAvailableCheck()
     const result = await check.check()
     expect(['ok', 'error']).toContain(result.severity)
-    expect(result.fixable).toBe(false)
+    expect(result.fixable).toBe(true)
+  })
+
+  it('has fix method', () => {
+    const check = new DbcliAvailableCheck()
+    expect(typeof check.fix).toBe('function')
   })
 })

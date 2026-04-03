@@ -11,12 +11,22 @@ export class DbcliAvailableCheck implements IHealthCheck {
       const version = execSync('dbcli --version', { encoding: 'utf8' }).trim()
 
       if (!version) {
-        return createCheckResult(this, 'error', '未安裝 dbcli，請參考 https://github.com/nicordev/dbcli 安裝')
+        return createCheckResult(this, 'error', '未安裝 dbcli')
       }
 
       return createCheckResult(this, 'ok', version)
     } catch {
-      return createCheckResult(this, 'error', '未安裝 dbcli，請參考 https://github.com/nicordev/dbcli 安裝')
+      return createCheckResult(this, 'error', '未安裝 dbcli')
+    }
+  }
+
+  async fix(): Promise<CheckResult> {
+    try {
+      execSync('bun install -g @carllee1983/dbcli', { stdio: 'pipe' })
+      const version = execSync('dbcli --version', { encoding: 'utf8' }).trim()
+      return createCheckResult(this, 'ok', `已安裝 dbcli ${version}`)
+    } catch {
+      return createCheckResult(this, 'error', '自動安裝失敗，請手動執行: bun install -g @carllee1983/dbcli')
     }
   }
 }
