@@ -32,7 +32,32 @@ bun run dev analyze <session-id>                   # Output operation manifest t
 bun run dev analyze <session-id> --stdout          # Print JSON manifest to console
 bun run dev analyze <session-id> --format json     # Write JSON manifest to file
 bun run dev analyze <session-id> --format md       # Write Markdown manifest to file (default)
-# bun run dev analyze <session-id> --format optimize-md  # [coming soon] DB performance optimization report
+
+# DB Performance Optimization Report (--format optimize-md)
+bun run dev analyze <session-id> --format optimize-md
+  # Layer 1 only (offline pattern analysis):
+  #   - Per-table read/write ratio + Redis/Read Replica recommendations
+  #   - N+1 query detection aggregated to API path level
+  #   - Query fragmentation detection (≥3 identical queries per request)
+
+bun run dev analyze <session-id> --format optimize-md \
+  --ddl ./schema.sql
+  # + Layer 2a: DDL schema diff
+  #   Parses MySQL CREATE TABLE to detect un-indexed WHERE columns
+
+bun run dev analyze <session-id> --format optimize-md \
+  --ddl ./schema.sql \
+  --explain-db mysql://user:pass@localhost:3306/mydb \
+  --min-rows 1000 \
+  --explain-concurrency 5
+  # + Layer 2b: Live EXPLAIN analysis
+  #   Connects to DB, runs EXPLAIN on unique SELECT patterns,
+  #   detects full table scans (type=ALL, rows > --min-rows)
+
+# Output flags for optimize-md:
+#   --output <path>         Write report to specific path (default: data/analysis/<id>/optimization-report.md)
+#   --stdout                Print report to console
+#   --llm                   [deferred to v2] Enable LLM deep analysis via Claude API
 
 # Export (CLI)
 bun run dev export eloquent --laravel /path/to/laravel

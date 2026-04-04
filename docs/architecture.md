@@ -25,13 +25,21 @@ src/
     Recording/
       Domain/            Session, OperationMarker, ProtocolParser, HttpChunk, ApiCallFlow
       Application/
-        Services/        RecordingService, ChunkAnalyzerService, UnifiedCorrelationService
+        Services/        RecordingService, ChunkAnalyzerService, UnifiedCorrelationService,
+                         ExplainAnalyzer (Layer 2b: EXPLAIN live analysis + MysqlExplainAdapter),
+                         IndexSuggestionService (merge DDL + EXPLAIN index recommendations)
         Strategies/      FlowGrouper, HttpFlowGrouper, NoiseTableDetector, RelationInferrer,
-                         SqlSemanticInferrer, ReadWriteRatioAnalyzer (Layer 1: R/W ratio analysis)
+                         SqlSemanticInferrer,
+                         ReadWriteRatioAnalyzer (Layer 1: R/W ratio + cache suggestions),
+                         N1QueryDetector (Layer 1: N+1 aggregated to API path level),
+                         QueryFragmentationDetector (Layer 1: repeated queries ≥3× per request),
+                         DdlSchemaParser (Layer 2a: MySQL DDL regex parser),
+                         IndexCoverageGapAnalyzer (Layer 2a: WHERE column vs DDL index diff)
       Infrastructure/
         Proxy/           TcpProxy, HttpProxy, MysqlProtocolParser
         Persistence/     RecordingRepository (JSONL for queries, markers, and HTTP chunks)
-        Renderers/       ManifestMarkdownRenderer
+        Renderers/       ManifestMarkdownRenderer,
+                         OptimizationReportRenderer (--format optimize-md Markdown output)
         Providers/       RecordingServiceProvider
       Presentation/      RecordingController, Recording.routes.ts, AnalyzeCommand
 
@@ -116,7 +124,7 @@ Captures browser events (clicks, form submits, etc.) and sends them as **operati
    - `HttpProxy` (optional) intercepts API traffic → `RecordingRepository` appends to `http_chunks.jsonl`.
    - Chrome extension captures events → `RecordingRepository` appends to `markers.jsonl`.
 5. **Analysis**: `AnalyzeCommand` orchestrates `HttpFlowGrouper` and `UnifiedCorrelationService` to match API calls with DB patterns using a 500ms time window and SQL SHA256 hashing.
-6. **Reporting**: `ManifestMarkdownRenderer` generates a detailed report including bootstrap metadata, noise table filtering, and N+1 query detection.
+6. **Reporting**: `ManifestMarkdownRenderer` generates a detailed report including bootstrap metadata, noise table filtering, and N+1 query detection. `OptimizationReportRenderer` generates the `--format optimize-md` report: per-table R/W ratios, N+1 findings with batch SQL, query fragmentation, DDL index gaps, and EXPLAIN-confirmed full table scans — each finding includes a runnable SQL snippet.
 7. User annotates vFK → SchemaController API → `JsonFileRepository` persists
 8. CLI `export` → `ExportService` → `IExporter` → `IFileWriter`
 9. `doctor` command → `DoctorService` runs each `IHealthCheck` → report or interactive repair

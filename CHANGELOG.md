@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-04-04
+
+### Added
+- **DB Performance Optimization Report** (`--format optimize-md`): A three-layer analysis pipeline that turns recorded sessions into actionable, runnable SQL recommendations.
+  - **Layer 1 — Pattern Analysis (offline)**: N+1 query detection aggregated to API path level with batch `IN (...)` rewrite suggestions. Query fragmentation detection (≥3 identical queries per request) with `dataloader`/`batch`/`cache` recommendations. Read/write ratio analysis with Redis TTL and Read Replica suggestions.
+  - **Layer 2a — DDL Schema Diff** (`--ddl <schema.sql>`): Parses MySQL `CREATE TABLE` DDL with regex (backtick identifiers, composite indexes, `AUTO_INCREMENT`, charset/collation). Cross-references N+1 and fragmentation findings against existing indexes to surface un-indexed `WHERE` columns. Generates `CREATE INDEX` statements marked as "unverified — test in staging first."
+  - **Layer 2b — EXPLAIN Live Analysis** (`--explain-db <url>`): Connects to a live MySQL database, deduplicates SELECT queries by hash, runs `EXPLAIN` concurrently (configurable with `--explain-concurrency`, default 5), and detects full table scans (`type=ALL`, rows > `--min-rows`). 5-second connection timeout; gracefully skips Layer 2b on failure.
+  - **Index Suggestion Merging**: When both DDL and EXPLAIN confirm the same missing index, the finding is marked `source: 'both'` and promoted to "confirmed" confidence.
+  - **Runnable Markdown output**: Every finding includes a `CREATE INDEX`, batch query rewrite, or cache comment — ready to copy-paste.
+- **`--explain-concurrency <n>`** flag (default 5): Tune EXPLAIN query parallelism for remote DBs over VPN or fast local instances.
+- **DDL corpus test fixtures**: 5 real-world MySQL DDL fixtures (`laravel_ecommerce`, `rails_blog`, `mysql_charset_collation`, `composite_indexes`, `wordpress_core`) exercise the parser against production-like schema patterns.
+
 ## [0.3.0] - 2026-04-04
 
 ### Added
@@ -46,6 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Interactive UI**: Basic React-based canvas for exploring table relationships.
 
 ---
+[0.4.0]: https://github.com/CarlLee1983/archivolt/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/CarlLee1983/archivolt/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/CarlLee1983/archivolt/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/CarlLee1983/archivolt/releases/tag/v0.1.0

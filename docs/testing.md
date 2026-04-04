@@ -10,7 +10,11 @@ test/unit/               Mirrors src/ layout
     Recording/           QueryAnalyzer, RecordingService, Session, OperationMarker,
                          QueryChunk, Protocol/TCP, Repository, Controller, Routes,
                          FlowGrouper, HttpFlowGrouper, NoiseTableDetector, UnifiedCorrelationService,
-                         ReadWriteRatioAnalyzer
+                         ReadWriteRatioAnalyzer, N1QueryDetector, QueryFragmentationDetector,
+                         DdlSchemaParser, IndexCoverageGapAnalyzer,
+                         ExplainAnalyzer, IndexSuggestionService,
+                         OptimizationReportRenderer (Infrastructure/),
+                         AnalyzeCommand (CLI/)
     Doctor/              All 13 checks, DoctorService, DoctorReporter, DoctorCommand
   Domain/                ERModel, GroupingStrategy, RelationInferrer
   CLI/                   ExportCommand, RecordCommand
