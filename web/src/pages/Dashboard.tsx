@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useDashboardStore } from '@/stores/dashboardStore'
 import { StatusSection } from '@/components/Dashboard/StatusSection'
 import { WorkflowSection } from '@/components/Dashboard/WorkflowSection'
+import { SessionList } from '@/components/Dashboard/SessionList'
 
 export default function Dashboard() {
   const navigate = useNavigate()
@@ -10,6 +11,7 @@ export default function Dashboard() {
     status,
     sessions,
     liveStats,
+    loading,
     fetchStatus,
     fetchSessions,
     connectSSE,
@@ -52,8 +54,8 @@ export default function Dashboard() {
       <div className="pt-20 pb-8 px-4 max-w-4xl mx-auto space-y-4">
         <StatusSection status={status} liveStats={liveStats} />
         <WorkflowSection status={status} sessions={sessions} />
+        <SessionList sessions={sessions} loading={loading} />
 
-        {/* Session list + Wizard — Task 8 & 9 會補充 */}
         <div className="flex justify-center pt-2">
           <button
             onClick={openWizard}
