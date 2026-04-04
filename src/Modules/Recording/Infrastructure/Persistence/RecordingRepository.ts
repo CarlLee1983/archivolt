@@ -153,4 +153,16 @@ export class RecordingRepository {
     }
     return sessions
   }
+
+  async exists(): Promise<boolean> {
+    return existsSync(this.baseDir)
+  }
+
+  async getTableCount(): Promise<number> {
+    return 0
+  }
+
+  async hasGroups(): Promise<boolean> {
+    return false
+  }
 }

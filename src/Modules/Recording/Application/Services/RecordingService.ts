@@ -40,6 +40,14 @@ export class RecordingService {
     return this._proxyPort
   }
 
+  getHttpProxyStatus(): { running: boolean; port: number | null; target: string | null } {
+    return {
+      running: false,
+      port: null,
+      target: null,
+    }
+  }
+
   async start(config: ProxyConfig): Promise<RecordingSession> {
     if (this.isRecording) {
       throw new Error('already recording: stop current session first.')
