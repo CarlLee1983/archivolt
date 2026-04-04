@@ -5,22 +5,29 @@ import type { CapturedQuery } from '@/Modules/Recording/Domain/Session'
 const DEFAULT_WINDOW_MS = 500
 
 /**
- * SQL を正規化して SHA256 前 16 chars を返す:
+ * SQL を正規化する:
  * 1. IN(...) → IN(?)
  * 2. 単引用符文字列 → ?
  * 3. 数値リテラル → ?
  * 4. 空白正規化、小文字化
- * 5. SHA256 hex → 前 16 chars
  */
-export function computeQueryHash(sql: string): string {
-  let normalized = sql
+export function normalizeSql(sql: string): string {
+  return sql
     .replace(/IN\s*\([^)]*\)/gi, 'IN (?)')
     .replace(/'[^']*'/g, '?')
     .replace(/\b\d+\b/g, '?')
     .replace(/\s+/g, ' ')
     .trim()
     .toLowerCase()
+}
 
+/**
+ * SQL を正規化して SHA256 前 16 chars を返す:
+ * 1. normalizeSql を使用して SQL を正規化
+ * 2. SHA256 hex → 前 16 chars
+ */
+export function computeQueryHash(sql: string): string {
+  const normalized = normalizeSql(sql)
   return createHash('sha256').update(normalized).digest('hex').slice(0, 16)
 }
 

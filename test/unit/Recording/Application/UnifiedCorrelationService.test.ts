@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   computeQueryHash,
   correlate,
+  normalizeSql,
 } from '@/Modules/Recording/Application/Services/UnifiedCorrelationService'
 import type { ApiCallFlow } from '@/Modules/Recording/Domain/ApiCallFlow'
 import type { CapturedQuery } from '@/Modules/Recording/Domain/Session'
@@ -35,6 +36,27 @@ function makeQuery(overrides: Partial<CapturedQuery> = {}): CapturedQuery {
     ...overrides,
   }
 }
+
+describe('normalizeSql', () => {
+  it('normalizes IN clauses', () => {
+    expect(normalizeSql('SELECT * FROM users WHERE id IN (1, 2, 3)')).toBe(
+      'select * from users where id in (?)',
+    )
+  })
+  it('normalizes string literals', () => {
+    expect(normalizeSql("SELECT * FROM users WHERE name = 'alice'")).toBe(
+      'select * from users where name = ?',
+    )
+  })
+  it('normalizes numeric literals', () => {
+    expect(normalizeSql('SELECT * FROM orders WHERE status = 1')).toBe(
+      'select * from orders where status = ?',
+    )
+  })
+  it('collapses whitespace', () => {
+    expect(normalizeSql('SELECT  *  FROM  users')).toBe('select * from users')
+  })
+})
 
 describe('computeQueryHash', () => {
   it('strips numeric parameters and produces consistent hash', () => {
