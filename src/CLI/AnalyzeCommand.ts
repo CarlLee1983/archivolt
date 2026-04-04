@@ -4,6 +4,8 @@ import { writeFile } from 'node:fs/promises'
 import { RecordingRepository } from '@/Modules/Recording/Infrastructure/Persistence/RecordingRepository'
 import { ChunkAnalyzerService } from '@/Modules/Recording/Application/Services/ChunkAnalyzerService'
 import { renderManifest } from '@/Modules/Recording/Infrastructure/Renderers/ManifestMarkdownRenderer'
+import { pairHttpChunks } from '@/Modules/Recording/Application/Strategies/HttpFlowGrouper'
+import { correlate } from '@/Modules/Recording/Application/Services/UnifiedCorrelationService'
 
 export interface AnalyzeArgs {
   readonly sessionId: string
@@ -56,8 +58,15 @@ export async function runAnalyzeCommand(argv: string[]): Promise<void> {
   const analyzer = new ChunkAnalyzerService()
   const manifest = analyzer.analyze(session, queries, markers)
 
+  // HTTP proxy データ（なければスキップ）
+  const httpChunks = await repo.loadHttpChunks(args.sessionId)
+  const apiFlows = httpChunks.length > 0
+    ? correlate(pairHttpChunks(httpChunks), queries)
+    : undefined
+
   if (args.format === 'json' || args.stdout) {
-    const json = JSON.stringify(manifest, null, 2)
+    const output = apiFlows ? { ...manifest, apiFlows } : manifest
+    const json = JSON.stringify(output, null, 2)
     if (args.stdout) {
       console.log(json)
       return
@@ -70,7 +79,7 @@ export async function runAnalyzeCommand(argv: string[]): Promise<void> {
     return
   }
 
-  const md = renderManifest(manifest)
+  const md = renderManifest(manifest, apiFlows)
   const outPath = args.output ?? path.resolve(process.cwd(), `data/analysis/${args.sessionId}/manifest.md`)
   const dir = path.dirname(outPath)
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
