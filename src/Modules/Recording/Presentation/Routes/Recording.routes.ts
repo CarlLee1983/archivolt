@@ -34,9 +34,13 @@ export function registerRecordingRoutes(
             )
           }
           timer = setInterval(() => {
-            const stats = service.getLiveStats()
-            if (stats) send('stats', stats)
-            else send('idle', { recording: false })
+            try {
+              const stats = service.getLiveStats()
+              if (stats) send('stats', stats)
+              else send('idle', { recording: false })
+            } catch {
+              // getLiveStats 不應拋錯，若發生則靜默跳過本次推送
+            }
           }, 1000)
         },
         cancel() {
