@@ -49,6 +49,12 @@ export const schemaApi = {
       body: JSON.stringify({ tableName, vfkId }),
     }),
 
+  restoreVirtualFK: (tableName: string, vfkId: string) =>
+    request<{ restored: string }>('/api/virtual-fk/restore', {
+      method: 'POST',
+      body: JSON.stringify({ tableName, vfkId }),
+    }),
+
   updateGroups: (groups: ERModel['groups']) =>
     request<ERModel['groups']>('/api/groups', {
       method: 'PUT',
