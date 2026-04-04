@@ -107,3 +107,25 @@ export function createCapturedQuery(params: {
     ...params,
   }
 }
+
+export interface IncrementalStats {
+  totalQueries: number
+  byOperation: Record<string, number>
+  tablesAccessed: Set<string>
+}
+
+export function applyIncrementalStats(
+  session: RecordingSession,
+  stats: IncrementalStats,
+  connectionCount: number,
+): RecordingSession {
+  return {
+    ...session,
+    stats: {
+      totalQueries: stats.totalQueries,
+      byOperation: { ...stats.byOperation },
+      tablesAccessed: [...stats.tablesAccessed].sort(),
+      connectionCount,
+    },
+  }
+}
