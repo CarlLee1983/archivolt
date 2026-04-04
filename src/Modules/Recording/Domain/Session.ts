@@ -108,6 +108,10 @@ export function createCapturedQuery(params: {
   }
 }
 
+/**
+ * Mutable accumulator for incremental stats tracking during a recording session.
+ * Not persisted — converted to SessionStats via applyIncrementalStats() on session stop.
+ */
 export interface IncrementalStats {
   totalQueries: number
   byOperation: Record<string, number>
