@@ -1,6 +1,6 @@
 # Optimization Report Generator — Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Implement `archivolt analyze --format optimize-md` pipeline — Layer 1 pattern analysis (N+1, read/write ratio, query fragmentation), Layer 2a DDL schema diff, and Layer 2b EXPLAIN live analysis — each outputting runnable Markdown with embedded SQL.
 
@@ -44,7 +44,7 @@
 
 Currently `computeQueryHash` inlines the normalization. Extract it so `N1QueryDetector` and `QueryFragmentationDetector` can reuse the same logic to get the human-readable normalizedSql (not the hash).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 In `test/unit/Recording/Application/UnifiedCorrelationService.test.ts`, add:
 
@@ -76,14 +76,14 @@ describe('normalizeSql', () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 ```bash
 bun test test/unit/Recording/Application/UnifiedCorrelationService.test.ts
 ```
 Expected: FAIL — `normalizeSql is not exported`
 
-- [ ] **Step 3: Extract and export `normalizeSql`**
+- [x] **Step 3: Extract and export `normalizeSql`**
 
 In `src/Modules/Recording/Application/Services/UnifiedCorrelationService.ts`, extract the normalization logic before hashing:
 
@@ -111,14 +111,14 @@ export function computeQueryHash(sql: string): string {
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 ```bash
 bun test test/unit/Recording/Application/UnifiedCorrelationService.test.ts
 ```
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/Modules/Recording/Application/Services/UnifiedCorrelationService.ts \
@@ -136,7 +136,7 @@ git commit -m "refactor: [recording] 從 computeQueryHash 提取並匯出 normal
 
 Aggregates the `isN1Candidate` flags from `ApiCallFlow.dbQueries` up to the API path level and generates batch SQL suggestions.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `test/unit/Recording/Application/N1QueryDetector.test.ts`:
 
@@ -221,14 +221,14 @@ describe('detectN1Queries', () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 ```bash
 bun test test/unit/Recording/Application/N1QueryDetector.test.ts
 ```
 Expected: FAIL — `Cannot find module N1QueryDetector`
 
-- [ ] **Step 3: Implement `N1QueryDetector`**
+- [x] **Step 3: Implement `N1QueryDetector`**
 
 Create `src/Modules/Recording/Application/Strategies/N1QueryDetector.ts`:
 
@@ -316,21 +316,21 @@ export function detectN1Queries(
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 ```bash
 bun test test/unit/Recording/Application/N1QueryDetector.test.ts
 ```
 Expected: PASS
 
-- [ ] **Step 5: Typecheck**
+- [x] **Step 5: Typecheck**
 
 ```bash
 bun run typecheck
 ```
 Expected: no errors
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/Modules/Recording/Application/Strategies/N1QueryDetector.ts \
@@ -348,7 +348,7 @@ git commit -m "feat: [recording] 實作 N1QueryDetector（Layer 1 N+1 聚合分�
 
 Detects queries appearing ≥ 3 times in a single API flow (more severe than N+1). Independent output from N1QueryDetector.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `test/unit/Recording/Application/QueryFragmentationDetector.test.ts`:
 
@@ -430,14 +430,14 @@ describe('detectQueryFragmentation', () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 ```bash
 bun test test/unit/Recording/Application/QueryFragmentationDetector.test.ts
 ```
 Expected: FAIL
 
-- [ ] **Step 3: Implement `QueryFragmentationDetector`**
+- [x] **Step 3: Implement `QueryFragmentationDetector`**
 
 Create `src/Modules/Recording/Application/Strategies/QueryFragmentationDetector.ts`:
 
@@ -518,14 +518,14 @@ export function detectQueryFragmentation(
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 ```bash
 bun test test/unit/Recording/Application/QueryFragmentationDetector.test.ts
 ```
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/Modules/Recording/Application/Strategies/QueryFragmentationDetector.ts \
@@ -543,7 +543,7 @@ git commit -m "feat: [recording] 實作 QueryFragmentationDetector（Layer 1 碎
 
 Renders Layer 1 findings (ReadWriteReport + N1Finding[] + FragmentationFinding[]) to Markdown. Layer 2a/2b sections added in Tasks 8 and 12.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `test/unit/Recording/Infrastructure/OptimizationReportRenderer.test.ts`:
 
@@ -637,14 +637,14 @@ describe('renderOptimizationReport', () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 ```bash
 bun test test/unit/Recording/Infrastructure/OptimizationReportRenderer.test.ts
 ```
 Expected: FAIL
 
-- [ ] **Step 3: Implement `OptimizationReportRenderer`**
+- [x] **Step 3: Implement `OptimizationReportRenderer`**
 
 Create `src/Modules/Recording/Infrastructure/Renderers/OptimizationReportRenderer.ts`:
 
@@ -797,7 +797,7 @@ Note: `IndexGapFinding` and `FullScanFinding` are forward-referenced types that 
 
 Actually, cleaner approach: define the interface inline in the renderer for now and replace the import when Tasks 7 and 10 are done. See Step 3b below.
 
-- [ ] **Step 3b: Fix forward-reference type errors**
+- [x] **Step 3b: Fix forward-reference type errors**
 
 Since `IndexGapFinding` and `FullScanFinding` don't exist yet, temporarily define them inline in the renderer:
 
@@ -821,21 +821,21 @@ interface FullScanFinding {
 
 Replace the actual import lines with these stubs. After Tasks 7 and 10 create those types, replace the stubs with the real imports.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 ```bash
 bun test test/unit/Recording/Infrastructure/OptimizationReportRenderer.test.ts
 ```
 Expected: PASS
 
-- [ ] **Step 5: Typecheck**
+- [x] **Step 5: Typecheck**
 
 ```bash
 bun run typecheck
 ```
 Expected: no errors
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/Modules/Recording/Infrastructure/Renderers/OptimizationReportRenderer.ts \
@@ -853,7 +853,7 @@ git commit -m "feat: [recording] 實作 OptimizationReportRenderer（Layer 1 Mar
 
 This resolves **TODO-4** from TODOS.md. The `--format optimize-md` flag triggers Layer 1 analysis and renders the optimization report.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 In `test/unit/Recording/CLI/AnalyzeCommand.test.ts`, add to the existing `parseAnalyzeArgs` describe block:
 
@@ -906,14 +906,14 @@ describe('parseAnalyzeArgs — optimize-md flags', () => {
 })
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 ```bash
 bun test test/unit/Recording/CLI/AnalyzeCommand.test.ts
 ```
 Expected: FAIL — new fields don't exist on AnalyzeArgs
 
-- [ ] **Step 3: Extend `AnalyzeArgs` and `parseAnalyzeArgs`**
+- [x] **Step 3: Extend `AnalyzeArgs` and `parseAnalyzeArgs`**
 
 Replace the interface and parse function in `src/CLI/AnalyzeCommand.ts`:
 
@@ -966,7 +966,7 @@ export function parseAnalyzeArgs(argv: string[]): AnalyzeArgs {
 }
 ```
 
-- [ ] **Step 4: Add optimize-md branch to `runAnalyzeCommand`**
+- [x] **Step 4: Add optimize-md branch to `runAnalyzeCommand`**
 
 After the existing `if (args.format === 'json' || args.stdout)` block, add:
 
@@ -1028,28 +1028,28 @@ import { renderOptimizationReport, type OptimizationReportData, type EnabledLaye
 
 And update the `optimize-md` branch to use direct calls (no `await import()`).
 
-- [ ] **Step 5: Run tests to verify they pass**
+- [x] **Step 5: Run tests to verify they pass**
 
 ```bash
 bun test test/unit/Recording/CLI/AnalyzeCommand.test.ts
 ```
 Expected: PASS
 
-- [ ] **Step 6: Typecheck**
+- [x] **Step 6: Typecheck**
 
 ```bash
 bun run typecheck
 ```
 Expected: no errors
 
-- [ ] **Step 7: Run full test suite**
+- [x] **Step 7: Run full test suite**
 
 ```bash
 bun run test
 ```
 Expected: all PASS
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add src/CLI/AnalyzeCommand.ts \
@@ -1067,7 +1067,7 @@ git commit -m "feat: [recording] 實作 --format optimize-md Layer 1 Pattern Ana
 
 Regex-based MySQL DDL parser. Parses `CREATE TABLE` blocks to extract columns, `KEY`, `UNIQUE KEY`, `PRIMARY KEY`, and standalone `CREATE INDEX` statements. v1 = MySQL only.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `test/unit/Recording/Application/DdlSchemaParser.test.ts`:
 
@@ -1160,14 +1160,14 @@ describe('parseDdlSchema', () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 ```bash
 bun test test/unit/Recording/Application/DdlSchemaParser.test.ts
 ```
 Expected: FAIL
 
-- [ ] **Step 3: Implement `DdlSchemaParser`**
+- [x] **Step 3: Implement `DdlSchemaParser`**
 
 Create `src/Modules/Recording/Application/Strategies/DdlSchemaParser.ts`:
 
@@ -1321,20 +1321,20 @@ return {
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 ```bash
 bun test test/unit/Recording/Application/DdlSchemaParser.test.ts
 ```
 Expected: PASS
 
-- [ ] **Step 5: Typecheck**
+- [x] **Step 5: Typecheck**
 
 ```bash
 bun run typecheck
 ```
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/Modules/Recording/Application/Strategies/DdlSchemaParser.ts \
@@ -1352,7 +1352,7 @@ git commit -m "feat: [recording] 實作 DdlSchemaParser（MySQL DDL 索引解析
 
 Cross-references N+1/fragmentation findings with DdlSchemaParser output to detect un-indexed WHERE columns.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `test/unit/Recording/Application/IndexCoverageGapAnalyzer.test.ts`:
 
@@ -1434,14 +1434,14 @@ describe('analyzeIndexCoverageGaps', () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 ```bash
 bun test test/unit/Recording/Application/IndexCoverageGapAnalyzer.test.ts
 ```
 Expected: FAIL
 
-- [ ] **Step 3: Implement `IndexCoverageGapAnalyzer`**
+- [x] **Step 3: Implement `IndexCoverageGapAnalyzer`**
 
 Create `src/Modules/Recording/Application/Strategies/IndexCoverageGapAnalyzer.ts`:
 
@@ -1552,14 +1552,14 @@ export function analyzeIndexCoverageGaps(
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 ```bash
 bun test test/unit/Recording/Application/IndexCoverageGapAnalyzer.test.ts
 ```
 Expected: PASS
 
-- [ ] **Step 5: Update OptimizationReportRenderer stub types with real imports**
+- [x] **Step 5: Update OptimizationReportRenderer stub types with real imports**
 
 In `src/Modules/Recording/Infrastructure/Renderers/OptimizationReportRenderer.ts`, replace the stub `IndexGapFinding` definition with the real import:
 
@@ -1571,14 +1571,14 @@ In `src/Modules/Recording/Infrastructure/Renderers/OptimizationReportRenderer.ts
 import type { IndexGapFinding } from '@/Modules/Recording/Application/Strategies/IndexCoverageGapAnalyzer'
 ```
 
-- [ ] **Step 6: Run full tests + typecheck**
+- [x] **Step 6: Run full tests + typecheck**
 
 ```bash
 bun run test && bun run typecheck
 ```
 Expected: all PASS
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/Modules/Recording/Application/Strategies/IndexCoverageGapAnalyzer.ts \
@@ -1596,7 +1596,7 @@ git commit -m "feat: [recording] 實作 IndexCoverageGapAnalyzer（Layer 2a DDL 
 
 When `--ddl` is provided with `--format optimize-md`, read the DDL file, parse it, and run `IndexCoverageGapAnalyzer`.
 
-- [ ] **Step 1: Update the `optimize-md` branch in `runAnalyzeCommand`**
+- [x] **Step 1: Update the `optimize-md` branch in `runAnalyzeCommand`**
 
 In `src/CLI/AnalyzeCommand.ts`, add to the top-level imports:
 
@@ -1633,21 +1633,21 @@ And pass `indexGapFindings` into `reportData`:
 
 Note: `enabledLayers` needs to be `const enabledLayers: EnabledLayer[] = ['pattern']` (mutable array) to allow `.push()`. Change the `const` to `const enabledLayers: EnabledLayer[] = ['pattern']`.
 
-- [ ] **Step 2: Typecheck**
+- [x] **Step 2: Typecheck**
 
 ```bash
 bun run typecheck
 ```
 Expected: no errors
 
-- [ ] **Step 3: Run full tests**
+- [x] **Step 3: Run full tests**
 
 ```bash
 bun run test
 ```
 Expected: all PASS
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add src/CLI/AnalyzeCommand.ts
@@ -1664,14 +1664,14 @@ git commit -m "feat: [recording] AnalyzeCommand 接線 --ddl Layer 2a DDL schema
 
 MySQL EXPLAIN adapter with 5-second timeout, de-duplicates by queryHash, graceful timeout handling.
 
-- [ ] **Step 1: Install mysql2**
+- [x] **Step 1: Install mysql2**
 
 ```bash
 bun add mysql2
 ```
 Expected: mysql2 added to package.json dependencies
 
-- [ ] **Step 2: Write the failing test**
+- [x] **Step 2: Write the failing test**
 
 Create `test/unit/Recording/Application/ExplainAnalyzer.test.ts`:
 
@@ -1755,14 +1755,14 @@ describe('detectFullScans', () => {
 })
 ```
 
-- [ ] **Step 3: Run test to verify it fails**
+- [x] **Step 3: Run test to verify it fails**
 
 ```bash
 bun test test/unit/Recording/Application/ExplainAnalyzer.test.ts
 ```
 Expected: FAIL
 
-- [ ] **Step 4: Implement `ExplainAnalyzer`**
+- [x] **Step 4: Implement `ExplainAnalyzer`**
 
 Create `src/Modules/Recording/Application/Services/ExplainAnalyzer.ts`:
 
@@ -1862,14 +1862,14 @@ export async function runExplainAnalysis(
 }
 ```
 
-- [ ] **Step 5: Run test to verify it passes**
+- [x] **Step 5: Run test to verify it passes**
 
 ```bash
 bun test test/unit/Recording/Application/ExplainAnalyzer.test.ts
 ```
 Expected: PASS
 
-- [ ] **Step 6: Implement `MysqlExplainAdapter`**
+- [x] **Step 6: Implement `MysqlExplainAdapter`**
 
 Add to the same file `src/Modules/Recording/Application/Services/ExplainAnalyzer.ts`:
 
@@ -1915,14 +1915,14 @@ export class MysqlExplainAdapter implements ExplainAnalyzerAdapter {
 }
 ```
 
-- [ ] **Step 7: Run full tests + typecheck**
+- [x] **Step 7: Run full tests + typecheck**
 
 ```bash
 bun run test && bun run typecheck
 ```
 Expected: all PASS
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add src/Modules/Recording/Application/Services/ExplainAnalyzer.ts \
@@ -1939,7 +1939,7 @@ git commit -m "feat: [recording] 實作 ExplainAnalyzer + MysqlExplainAdapter（
 - Modify: `src/CLI/AnalyzeCommand.ts`
 - Modify: `src/Modules/Recording/Infrastructure/Renderers/OptimizationReportRenderer.ts`
 
-- [ ] **Step 1: Replace FullScanFinding stub in OptimizationReportRenderer**
+- [x] **Step 1: Replace FullScanFinding stub in OptimizationReportRenderer**
 
 In `src/Modules/Recording/Infrastructure/Renderers/OptimizationReportRenderer.ts`, remove the stub `FullScanFinding` interface and add real import:
 
@@ -1951,7 +1951,7 @@ In `src/Modules/Recording/Infrastructure/Renderers/OptimizationReportRenderer.ts
 import type { FullScanFinding } from '@/Modules/Recording/Application/Services/ExplainAnalyzer'
 ```
 
-- [ ] **Step 2: Wire `--explain-db` in `runAnalyzeCommand`**
+- [x] **Step 2: Wire `--explain-db` in `runAnalyzeCommand`**
 
 Add to `src/CLI/AnalyzeCommand.ts` imports:
 
@@ -2004,21 +2004,21 @@ Update `reportData` to include explain results:
     }
 ```
 
-- [ ] **Step 3: Typecheck**
+- [x] **Step 3: Typecheck**
 
 ```bash
 bun run typecheck
 ```
 Expected: no errors
 
-- [ ] **Step 4: Run full tests**
+- [x] **Step 4: Run full tests**
 
 ```bash
 bun run test
 ```
 Expected: all PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/CLI/AnalyzeCommand.ts \
@@ -2036,7 +2036,7 @@ git commit -m "feat: [recording] AnalyzeCommand 接線 --explain-db Layer 2b EXP
 
 Merge DDL-source and EXPLAIN-source index suggestions into a deduplicated list, marking `source: 'both'` when both confirm the same (table, columns).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `test/unit/Recording/Application/IndexSuggestionService.test.ts`:
 
@@ -2101,14 +2101,14 @@ describe('mergeIndexSuggestions', () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 ```bash
 bun test test/unit/Recording/Application/IndexSuggestionService.test.ts
 ```
 Expected: FAIL
 
-- [ ] **Step 3: Implement `IndexSuggestionService`**
+- [x] **Step 3: Implement `IndexSuggestionService`**
 
 Create `src/Modules/Recording/Application/Services/IndexSuggestionService.ts`:
 
@@ -2179,20 +2179,20 @@ export function mergeIndexSuggestions(
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 ```bash
 bun test test/unit/Recording/Application/IndexSuggestionService.test.ts
 ```
 Expected: PASS
 
-- [ ] **Step 5: Typecheck + full tests**
+- [x] **Step 5: Typecheck + full tests**
 
 ```bash
 bun run test && bun run typecheck
 ```
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/Modules/Recording/Application/Services/IndexSuggestionService.ts \
@@ -2214,7 +2214,7 @@ git commit -m "feat: [recording] 實作 IndexSuggestionService（DDL + EXPLAIN �
 
 These are real-world MySQL DDL patterns (backticks, charset/collation, AUTO_INCREMENT, multi-line).
 
-- [ ] **Step 1: Create `test/fixtures/ddl/laravel_ecommerce.sql`**
+- [x] **Step 1: Create `test/fixtures/ddl/laravel_ecommerce.sql`**
 
 ```sql
 -- Laravel-style e-commerce schema (mysqldump output format)
@@ -2255,7 +2255,7 @@ CREATE TABLE `order_items` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
-- [ ] **Step 2: Create `test/fixtures/ddl/rails_blog.sql`**
+- [x] **Step 2: Create `test/fixtures/ddl/rails_blog.sql`**
 
 ```sql
 -- Rails-style blog schema
@@ -2287,7 +2287,7 @@ CREATE TABLE `post_tags` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ```
 
-- [ ] **Step 3: Create `test/fixtures/ddl/mysql_charset_collation.sql`**
+- [x] **Step 3: Create `test/fixtures/ddl/mysql_charset_collation.sql`**
 
 ```sql
 -- Fixture with charset/collation options that regex must tolerate
@@ -2304,7 +2304,7 @@ CREATE TABLE `sessions` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 ```
 
-- [ ] **Step 4: Create `test/fixtures/ddl/composite_indexes.sql`**
+- [x] **Step 4: Create `test/fixtures/ddl/composite_indexes.sql`**
 
 ```sql
 -- Fixture for testing composite index parsing
@@ -2324,7 +2324,7 @@ CREATE TABLE `audit_logs` (
 CREATE UNIQUE INDEX idx_audit_logs_unique_key ON audit_logs(user_id, action, resource_id);
 ```
 
-- [ ] **Step 5: Create `test/fixtures/ddl/wordpress_core.sql`**
+- [x] **Step 5: Create `test/fixtures/ddl/wordpress_core.sql`**
 
 ```sql
 -- WordPress-style schema with wp_ prefix
@@ -2344,7 +2344,7 @@ CREATE TABLE `wp_posts` (
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 ```
 
-- [ ] **Step 6: Add corpus tests to DdlSchemaParser.test.ts**
+- [x] **Step 6: Add corpus tests to DdlSchemaParser.test.ts**
 
 In `test/unit/Recording/Application/DdlSchemaParser.test.ts`, add:
 
@@ -2391,14 +2391,14 @@ describe('parseDdlSchema — real-world corpus fixtures', () => {
 })
 ```
 
-- [ ] **Step 7: Run the corpus tests**
+- [x] **Step 7: Run the corpus tests**
 
 ```bash
 bun test test/unit/Recording/Application/DdlSchemaParser.test.ts
 ```
 Expected: PASS (fix any regex issues found by real-world fixtures)
 
-- [ ] **Step 8: Fix any parser issues discovered by fixtures**
+- [x] **Step 8: Fix any parser issues discovered by fixtures**
 
 Common issues to watch for:
 - Column length notation `varchar(200)` inside KEY: `KEY post_name (post_name(191))` — strip the `(N)` from column names in index parsing
@@ -2414,7 +2414,7 @@ function extractColumns(columnsStr: string): readonly string[] {
 }
 ```
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add test/fixtures/ddl/ \
@@ -2432,7 +2432,7 @@ git commit -m "test: [recording] 新增 DDL corpus fixtures 與 DdlSchemaParser 
 - Modify: `src/Modules/Recording/Application/Services/ExplainAnalyzer.ts`
 - Modify: `test/unit/Recording/CLI/AnalyzeCommand.test.ts`
 
-- [ ] **Step 1: Add test for new flag**
+- [x] **Step 1: Add test for new flag**
 
 In `test/unit/Recording/CLI/AnalyzeCommand.test.ts`, add:
 
@@ -2448,14 +2448,14 @@ In `test/unit/Recording/CLI/AnalyzeCommand.test.ts`, add:
   })
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 ```bash
 bun test test/unit/Recording/CLI/AnalyzeCommand.test.ts
 ```
 Expected: FAIL
 
-- [ ] **Step 3: Add `explainConcurrency` to AnalyzeArgs**
+- [x] **Step 3: Add `explainConcurrency` to AnalyzeArgs**
 
 In `src/CLI/AnalyzeCommand.ts`:
 
@@ -2472,7 +2472,7 @@ Add to `parseAnalyzeArgs`:
 
 Add to returned object: `explainConcurrency`
 
-- [ ] **Step 4: Update `runExplainAnalysis` to accept concurrency**
+- [x] **Step 4: Update `runExplainAnalysis` to accept concurrency**
 
 In `src/Modules/Recording/Application/Services/ExplainAnalyzer.ts`, update the function signature:
 
@@ -2503,21 +2503,21 @@ Replace the sequential `for` loop with a concurrent batch:
   return findings
 ```
 
-- [ ] **Step 5: Pass concurrency in AnalyzeCommand**
+- [x] **Step 5: Pass concurrency in AnalyzeCommand**
 
 In the `--explain-db` section of `runAnalyzeCommand`:
 ```typescript
 fullScanFindings = await runExplainAnalysis(queries, adapter, args.minRows, args.explainConcurrency)
 ```
 
-- [ ] **Step 6: Run full tests + typecheck**
+- [x] **Step 6: Run full tests + typecheck**
 
 ```bash
 bun run test && bun run typecheck
 ```
 Expected: all PASS
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/CLI/AnalyzeCommand.ts \
@@ -2533,14 +2533,14 @@ git commit -m "feat: [recording] 新增 --explain-concurrency flag（TODO-3）"
 **Files:**
 - Modify: `TODOS.md`
 
-- [ ] **Step 1: Run the full test suite**
+- [x] **Step 1: Run the full test suite**
 
 ```bash
 bun run check
 ```
 Expected: typecheck + lint + all tests PASS
 
-- [ ] **Step 2: Update TODOS.md**
+- [x] **Step 2: Update TODOS.md**
 
 Mark TODO-4 and TODO-1 and TODO-3 as done. Update TODO-2 to reflect Layer 1+2 are now validated:
 
@@ -2556,7 +2556,7 @@ Ready to implement after manual validation of optimization reports on real sessi
 ### TODO-4: ✅ DONE — --format optimize-md wired (Task 5)
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add TODOS.md
