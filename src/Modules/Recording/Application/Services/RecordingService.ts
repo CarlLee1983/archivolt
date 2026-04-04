@@ -58,6 +58,7 @@ export class RecordingService {
 
     this._proxyPort = await this.proxy.start()
     await this.repo.saveSession(session)
+    this.repo.openStreams(session.id)
 
     this.flushTimer = setInterval(() => this.flush(), FLUSH_INTERVAL_MS)
 
@@ -80,8 +81,11 @@ export class RecordingService {
     this.proxy = null
     this._proxyPort = null
 
+    const sessionId = this.currentSession.id
+
     // Final flush
     await this.flush()
+    await this.repo.closeStreams(sessionId)
 
     const stopped = stopSession(
       updateSessionStats(this.currentSession, this.allQueries, connectionCount),

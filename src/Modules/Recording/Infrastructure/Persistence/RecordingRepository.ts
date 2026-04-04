@@ -50,6 +50,9 @@ export class RecordingRepository {
   }
 
   openStreams(sessionId: string): void {
+    if (this.streams.has(sessionId)) {
+      throw new Error(`[Recording] openStreams called twice for session ${sessionId}`)
+    }
     const dir = this.sessionDir(sessionId)
     if (!existsSync(dir)) {
       mkdirSync(dir, { recursive: true })
@@ -65,9 +68,15 @@ export class RecordingRepository {
     const s = this.streams.get(sessionId)
     if (!s) return
     await Promise.all([
-      new Promise<void>((res) => s.queries.end(res)),
-      new Promise<void>((res) => s.markers.end(res)),
-      new Promise<void>((res) => s.httpChunks.end(res)),
+      new Promise<void>((resolve, reject) => {
+        s.queries.end((err: Error | null | undefined) => (err ? reject(err) : resolve()))
+      }),
+      new Promise<void>((resolve, reject) => {
+        s.markers.end((err: Error | null | undefined) => (err ? reject(err) : resolve()))
+      }),
+      new Promise<void>((resolve, reject) => {
+        s.httpChunks.end((err: Error | null | undefined) => (err ? reject(err) : resolve()))
+      }),
     ])
     this.streams.delete(sessionId)
   }

@@ -29,7 +29,9 @@ describe('RecordingRepository markers', () => {
       createMarker({ sessionId, url: '/login', action: 'submit', target: 'form#login' }),
     ]
 
-    await repo.appendMarkers(sessionId, markers)
+    repo.openStreams(sessionId)
+    repo.appendMarkers(sessionId, markers)
+    await repo.closeStreams(sessionId)
     const loaded = await repo.loadMarkers(sessionId)
 
     expect(loaded).toHaveLength(2)
@@ -47,8 +49,10 @@ describe('RecordingRepository markers', () => {
     const batch1 = [createMarker({ sessionId, url: '/a', action: 'navigate' })]
     const batch2 = [createMarker({ sessionId, url: '/b', action: 'click' })]
 
-    await repo.appendMarkers(sessionId, batch1)
-    await repo.appendMarkers(sessionId, batch2)
+    repo.openStreams(sessionId)
+    repo.appendMarkers(sessionId, batch1)
+    repo.appendMarkers(sessionId, batch2)
+    await repo.closeStreams(sessionId)
 
     const loaded = await repo.loadMarkers(sessionId)
     expect(loaded).toHaveLength(2)

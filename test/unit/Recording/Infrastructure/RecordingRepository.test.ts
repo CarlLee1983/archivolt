@@ -64,7 +64,9 @@ describe('RecordingRepository', () => {
         duration: 3,
       })
 
-      await repo.appendQueries(session.id, [q1, q2])
+      repo.openStreams(session.id)
+      repo.appendQueries(session.id, [q1, q2])
+      await repo.closeStreams(session.id)
 
       const loaded = await repo.loadQueries(session.id)
       expect(loaded.length).toBe(2)
@@ -93,8 +95,10 @@ describe('RecordingRepository', () => {
         duration: 1,
       })
 
-      await repo.appendQueries(session.id, [q1])
-      await repo.appendQueries(session.id, [q2])
+      repo.openStreams(session.id)
+      repo.appendQueries(session.id, [q1])
+      repo.appendQueries(session.id, [q2])
+      await repo.closeStreams(session.id)
 
       const loaded = await repo.loadQueries(session.id)
       expect(loaded.length).toBe(2)

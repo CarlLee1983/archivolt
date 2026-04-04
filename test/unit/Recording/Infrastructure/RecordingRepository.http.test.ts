@@ -33,7 +33,9 @@ describe('RecordingRepository HTTP chunks', () => {
     const chunk1 = makeHttpChunk({ requestId: 'req-1' })
     const chunk2 = makeHttpChunk({ requestId: 'req-2', type: 'http_response', statusCode: 200 })
 
-    await repo.appendHttpChunks('rec_1', [chunk1, chunk2])
+    repo.openStreams('rec_1')
+    repo.appendHttpChunks('rec_1', [chunk1, chunk2])
+    await repo.closeStreams('rec_1')
     const loaded = await repo.loadHttpChunks('rec_1')
 
     expect(loaded).toHaveLength(2)
@@ -53,8 +55,10 @@ describe('RecordingRepository HTTP chunks', () => {
     const repo = new RecordingRepository(TEST_DIR)
     mkdirSync(`${TEST_DIR}/rec_1`, { recursive: true })
 
-    await repo.appendHttpChunks('rec_1', [makeHttpChunk({ requestId: 'a' })])
-    await repo.appendHttpChunks('rec_1', [makeHttpChunk({ requestId: 'b' })])
+    repo.openStreams('rec_1')
+    repo.appendHttpChunks('rec_1', [makeHttpChunk({ requestId: 'a' })])
+    repo.appendHttpChunks('rec_1', [makeHttpChunk({ requestId: 'b' })])
+    await repo.closeStreams('rec_1')
 
     const loaded = await repo.loadHttpChunks('rec_1')
     expect(loaded).toHaveLength(2)
