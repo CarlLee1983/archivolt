@@ -17,6 +17,7 @@ export default function ReviewPage() {
   const navigate = useNavigate()
   const { model, fetchSchema, refreshModel, selectTable } = useSchemaStore()
   const [subTab, setSubTab] = useState<SubTab>('pending')
+  const [actionError, setActionError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!model) fetchSchema()
@@ -46,6 +47,7 @@ export default function ReviewPage() {
                           original.refTable !== refTable ||
                           original.refColumns[0] !== refColumn
 
+    setActionError(null)
     try {
       if (columnChanged) {
         await schemaApi.deleteVirtualFK(vfkId, tableName)
@@ -57,27 +59,29 @@ export default function ReviewPage() {
       const updated = await schemaApi.getSchema()
       refreshModel(updated)
     } catch (e) {
-      console.error('Failed to confirm VFK:', e)
+      setActionError('確認失敗，請稍後再試')
     }
   }, [model, refreshModel])
 
   const handleIgnore = useCallback(async (tableName: string, vfkId: string) => {
+    setActionError(null)
     try {
       await schemaApi.ignoreVirtualFK(tableName, vfkId)
       const updated = await schemaApi.getSchema()
       refreshModel(updated)
     } catch (e) {
-      console.error('Failed to ignore VFK:', e)
+      setActionError('忽略失敗，請稍後再試')
     }
   }, [refreshModel])
 
   const handleRestore = useCallback(async (tableName: string, vfkId: string) => {
+    setActionError(null)
     try {
       await schemaApi.restoreVirtualFK(tableName, vfkId)
       const updated = await schemaApi.getSchema()
       refreshModel(updated)
     } catch (e) {
-      console.error('Failed to restore VFK:', e)
+      setActionError('復原失敗，請稍後再試')
     }
   }, [refreshModel])
 
@@ -163,6 +167,11 @@ export default function ReviewPage() {
 
       {/* List */}
       <div className="flex-1 overflow-y-auto p-8">
+        {actionError && (
+          <div className="max-w-4xl mx-auto mb-4 px-4 py-3 rounded-lg border border-warning/40 bg-warning/5 text-xs font-mono text-warning">
+            ⚠ {actionError}
+          </div>
+        )}
         {subTab === 'pending' && (
           <div className="max-w-4xl mx-auto space-y-3">
             {pending.length === 0 ? (
