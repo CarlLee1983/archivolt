@@ -3,6 +3,7 @@ import { writeFile, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import type { RecordingSession, CapturedQuery } from '@/Modules/Recording/Domain/Session'
 import type { OperationMarker } from '@/Modules/Recording/Domain/OperationMarker'
+import type { HttpChunk } from '@/Modules/Recording/Domain/HttpChunk'
 
 export class RecordingRepository {
   constructor(private readonly baseDir: string) {
@@ -25,6 +26,10 @@ export class RecordingRepository {
 
   private markersFile(sessionId: string): string {
     return path.join(this.sessionDir(sessionId), 'markers.jsonl')
+  }
+
+  private httpChunksFile(sessionId: string): string {
+    return path.join(this.sessionDir(sessionId), 'http_chunks.jsonl')
   }
 
   async saveSession(session: RecordingSession): Promise<void> {
@@ -79,6 +84,25 @@ export class RecordingRepository {
       .trim()
       .split('\n')
       .map((line) => JSON.parse(line) as CapturedQuery)
+  }
+
+  async appendHttpChunks(sessionId: string, chunks: readonly HttpChunk[]): Promise<void> {
+    if (chunks.length === 0) return
+    const lines = chunks.map((c) => JSON.stringify(c)).join('\n') + '\n'
+    const filePath = this.httpChunksFile(sessionId)
+    const existing = existsSync(filePath) ? await readFile(filePath, 'utf-8') : ''
+    await writeFile(filePath, existing + lines, 'utf-8')
+  }
+
+  async loadHttpChunks(sessionId: string): Promise<HttpChunk[]> {
+    const filePath = this.httpChunksFile(sessionId)
+    if (!existsSync(filePath)) return []
+    const text = await readFile(filePath, 'utf-8')
+    if (!text.trim()) return []
+    return text
+      .trim()
+      .split('\n')
+      .map((line) => JSON.parse(line) as HttpChunk)
   }
 
   async listSessions(): Promise<RecordingSession[]> {
