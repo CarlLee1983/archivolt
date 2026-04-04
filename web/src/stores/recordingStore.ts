@@ -74,7 +74,7 @@ export const useRecordingStore = create<RecordingState>((set, get) => ({
   toggleAutoFocus: () => set((s) => ({ autoFocus: !s.autoFocus })),
 
   play: () => {
-    const { chunks, activeChunkId, playing, playbackSpeed } = get()
+    const { chunks, activeChunkId, playing } = get()
     if (playing || chunks.length === 0) return
 
     const currentIndex = activeChunkId
