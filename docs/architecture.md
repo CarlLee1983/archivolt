@@ -120,9 +120,10 @@ Captures browser events (clicks, form submits, etc.) and sends them as **operati
 2. `JsonFileRepository` persists to `archivolt.json`
 3. Frontend loads schema via REST API; ReactFlow renders it
 4. **Recording**: 
-   - `TcpProxy` intercepts SQL → `MysqlProtocolParser` parses → `RecordingRepository` appends to `queries.jsonl`.
-   - `HttpProxy` (optional) intercepts API traffic → `RecordingRepository` appends to `http_chunks.jsonl`.
-   - Chrome extension captures events → `RecordingRepository` appends to `markers.jsonl`.
+   - `TcpProxy` intercepts SQL → `MysqlProtocolParser` parses → `RecordingRepository.appendQueries()` writes via persistent WriteStream (O(1), < 0.02ms per query).
+   - `HttpProxy` (optional) intercepts API traffic → `onChunk` is fire-and-forget (returns response immediately) → `RecordingRepository.appendHttpChunks()` writes via WriteStream without blocking the client.
+   - Chrome extension captures events → `RecordingRepository.appendMarkers()` writes via WriteStream.
+   - `RecordingService.start()` calls `repo.openStreams()` to open WriteStreams; `stop()` calls `repo.closeStreams()` which awaits all stream.end() to guarantee data durability before marking the session stopped.
 5. **Analysis**: `AnalyzeCommand` orchestrates `HttpFlowGrouper` and `UnifiedCorrelationService` to match API calls with DB patterns using a 500ms time window and SQL SHA256 hashing.
 6. **Reporting**: `ManifestMarkdownRenderer` generates a detailed report including bootstrap metadata, noise table filtering, and N+1 query detection. `OptimizationReportRenderer` generates the `--format optimize-md` report: per-table R/W ratios, N+1 findings with batch SQL, query fragmentation, DDL index gaps, and EXPLAIN-confirmed full table scans — each finding includes a runnable SQL snippet.
 7. User annotates vFK → SchemaController API → `JsonFileRepository` persists

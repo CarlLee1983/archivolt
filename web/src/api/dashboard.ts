@@ -79,4 +79,10 @@ export const dashboardApi = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     }).then((r) => r.json()),
+
+  stopRecording: (): Promise<{ success: boolean; data?: unknown; error?: string }> =>
+    fetch('/api/recording/stop', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    }).then((r) => r.json()),
 }

@@ -38,7 +38,7 @@ function CodeBlock({ code }: { code: string }) {
 
 export function WizardDrawer() {
   const navigate = useNavigate()
-  const { wizardOpen, wizardStep, closeWizard, setWizardStep, status } = useDashboardStore()
+  const { wizardOpen, wizardStep, closeWizard, setWizardStep, status, fetchStatus } = useDashboardStore()
 
   const [form, setForm] = useState({
     targetHost: 'localhost',
@@ -49,9 +49,23 @@ export function WizardDrawer() {
     httpTarget: 'http://localhost:8000',
   })
   const [starting, setStarting] = useState(false)
+  const [stopping, setStopping] = useState(false)
   const [startError, setStartError] = useState<string | null>(null)
 
   if (!wizardOpen) return null
+
+  const handleStop = async () => {
+    setStopping(true)
+    setStartError(null)
+    try {
+      await dashboardApi.stopRecording()
+      await fetchStatus()
+    } catch (e) {
+      setStartError(e instanceof Error ? e.message : '停止失敗')
+    } finally {
+      setStopping(false)
+    }
+  }
 
   const handleStart = async () => {
     setStarting(true)
@@ -199,10 +213,19 @@ export function WizardDrawer() {
               {startError && <p className="text-xs text-red-400">{startError}</p>}
 
               {status?.proxy.db.running ? (
-                <p className="text-xs text-emerald-300 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse inline-block" />
-                  DB Proxy 運行中 — Port {status.proxy.db.port}
-                </p>
+                <div className="space-y-2">
+                  <p className="text-xs text-emerald-300 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse inline-block" />
+                    DB Proxy 運行中 — Port {status.proxy.db.port}
+                  </p>
+                  <button
+                    onClick={handleStop}
+                    disabled={stopping}
+                    className="w-full py-2.5 bg-red-500/20 hover:bg-red-500/30 disabled:opacity-50 text-red-300 border border-red-500/30 rounded-xl text-sm font-medium transition-colors cursor-pointer"
+                  >
+                    {stopping ? '停止中...' : '停止 Proxy'}
+                  </button>
+                </div>
               ) : (
                 <button
                   onClick={handleStart}
