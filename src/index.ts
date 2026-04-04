@@ -109,6 +109,17 @@ async function start() {
   const port = (core.config.get<number>('PORT') ?? 3100) as number
   const server = core.liftoff(port)
 
+  // 自動開啟瀏覽器
+  const openBrowser = (url: string): void => {
+    const cmd =
+      process.platform === 'darwin' ? 'open' :
+      process.platform === 'win32'  ? 'cmd' :
+      'xdg-open'
+    const args = process.platform === 'win32' ? ['/c', 'start', url] : [url]
+    Bun.spawn([cmd, ...args], { stdout: 'ignore', stderr: 'ignore' })
+  }
+  setTimeout(() => openBrowser(`http://localhost:${port}`), 500)
+
   const schemaExists = await repo.exists()
 
   console.log(`
