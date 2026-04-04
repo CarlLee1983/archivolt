@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { describe, it, expect } from 'vitest'
 import { parseDdlSchema } from '@/Modules/Recording/Application/Strategies/DdlSchemaParser'
 
@@ -81,5 +83,43 @@ describe('parseDdlSchema', () => {
     schema.tables[0].indexes.forEach((idx) => {
       idx.columns.forEach((col) => expect(col).not.toContain('`'))
     })
+  })
+})
+
+const loadFixture = (name: string) =>
+  readFileSync(join(import.meta.dirname, '../../../fixtures/ddl', name), 'utf-8')
+
+describe('parseDdlSchema — real-world corpus fixtures', () => {
+  it('parses laravel ecommerce DDL without crashing', () => {
+    const schema = parseDdlSchema(loadFixture('laravel_ecommerce.sql'))
+    expect(schema.tables.map((t) => t.name)).toContain('users')
+    expect(schema.tables.map((t) => t.name)).toContain('orders')
+    const orders = schema.tables.find((t) => t.name === 'orders')
+    expect(orders?.indexes.some((i) => i.columns[0] === 'user_id')).toBe(true)
+    expect(orders?.indexes.some((i) => i.columns.includes('status'))).toBe(true)
+  })
+
+  it('parses rails blog DDL with composite primary key', () => {
+    const schema = parseDdlSchema(loadFixture('rails_blog.sql'))
+    const postTags = schema.tables.find((t) => t.name === 'post_tags')
+    expect(postTags?.primaryKey).toEqual(['post_id', 'tag_id'])
+  })
+
+  it('parses charset/collation DDL without errors', () => {
+    const schema = parseDdlSchema(loadFixture('mysql_charset_collation.sql'))
+    const sessions = schema.tables.find((t) => t.name === 'sessions')
+    expect(sessions?.indexes.some((i) => i.name === 'sessions_user_id_index')).toBe(true)
+  })
+
+  it('parses composite indexes and external CREATE INDEX', () => {
+    const schema = parseDdlSchema(loadFixture('composite_indexes.sql'))
+    const logs = schema.tables.find((t) => t.name === 'audit_logs')
+    expect(logs?.indexes.find((i) => i.name === 'audit_logs_user_action_index')?.columns).toEqual(['user_id', 'action'])
+    expect(logs?.indexes.find((i) => i.name === 'idx_audit_logs_unique_key')?.unique).toBe(true)
+  })
+
+  it('parses WordPress-style prefix tables', () => {
+    const schema = parseDdlSchema(loadFixture('wordpress_core.sql'))
+    expect(schema.tables.find((t) => t.name === 'wp_posts')).toBeDefined()
   })
 })
