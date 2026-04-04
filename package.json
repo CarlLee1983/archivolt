@@ -20,7 +20,8 @@
     "build:ext": "cd extension && bun run build.ts"
   },
   "dependencies": {
-    "@gravito/core": "^2.0.0"
+    "@gravito/core": "^2.0.0",
+    "mysql2": "^3.20.0"
   },
   "overrides": {
     "@gravito/photon": "1.0.1"
