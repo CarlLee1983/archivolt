@@ -73,4 +73,15 @@ describe('RecordingRepository (WriteStream)', () => {
     const lines = content.trim().split('\n').filter(Boolean)
     expect(lines).toHaveLength(100)
   })
+
+  it('openStreams 對同一 session 呼叫兩次應 throw', async () => {
+    tmpDir = mkdtempSync(path.join(tmpdir(), 'repo-test-'))
+    const repo = new RecordingRepository(tmpDir)
+
+    repo.openStreams('sess_dup')
+    expect(() => repo.openStreams('sess_dup')).toThrow('openStreams called twice')
+
+    // cleanup
+    await repo.closeStreams('sess_dup')
+  })
 })
