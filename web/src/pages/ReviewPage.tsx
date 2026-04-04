@@ -46,27 +46,39 @@ export default function ReviewPage() {
                           original.refTable !== refTable ||
                           original.refColumns[0] !== refColumn
 
-    if (columnChanged) {
-      await schemaApi.deleteVirtualFK(vfkId, tableName)
-      await schemaApi.addVirtualFK({ tableName, columns: [sourceColumn], refTable, refColumns: [refColumn] })
-    } else {
-      await schemaApi.confirmVirtualFK(tableName, vfkId)
-    }
+    try {
+      if (columnChanged) {
+        await schemaApi.deleteVirtualFK(vfkId, tableName)
+        await schemaApi.addVirtualFK({ tableName, columns: [sourceColumn], refTable, refColumns: [refColumn] })
+      } else {
+        await schemaApi.confirmVirtualFK(tableName, vfkId)
+      }
 
-    const updated = await schemaApi.getSchema()
-    refreshModel(updated)
+      const updated = await schemaApi.getSchema()
+      refreshModel(updated)
+    } catch (e) {
+      console.error('Failed to confirm VFK:', e)
+    }
   }, [model, refreshModel])
 
   const handleIgnore = useCallback(async (tableName: string, vfkId: string) => {
-    await schemaApi.ignoreVirtualFK(tableName, vfkId)
-    const updated = await schemaApi.getSchema()
-    refreshModel(updated)
+    try {
+      await schemaApi.ignoreVirtualFK(tableName, vfkId)
+      const updated = await schemaApi.getSchema()
+      refreshModel(updated)
+    } catch (e) {
+      console.error('Failed to ignore VFK:', e)
+    }
   }, [refreshModel])
 
   const handleRestore = useCallback(async (tableName: string, vfkId: string) => {
-    await schemaApi.restoreVirtualFK(tableName, vfkId)
-    const updated = await schemaApi.getSchema()
-    refreshModel(updated)
+    try {
+      await schemaApi.restoreVirtualFK(tableName, vfkId)
+      const updated = await schemaApi.getSchema()
+      refreshModel(updated)
+    } catch (e) {
+      console.error('Failed to restore VFK:', e)
+    }
   }, [refreshModel])
 
   const handleLocate = useCallback((tableName: string) => {
