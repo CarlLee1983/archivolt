@@ -1,72 +1,87 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap');
 
 @theme {
-  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
-  --color-surface: #020617; /* Slate 950 */
-  --color-panel: rgba(15, 23, 42, 0.8); /* Slate 900 with alpha */
-  --color-card: #1e293b; /* Slate 800 */
-  --color-border: #334155; /* Slate 700 */
-  --color-border-subtle: #1e293b; /* Slate 800 */
-  --color-primary: #3b82f6; /* Blue 500 */
-  --color-primary-hover: #2563eb; /* Blue 600 */
-  --color-muted: #64748b; /* Slate 500 */
-  --color-text: #f1f5f9; /* Slate 100 */
-  --color-text-dim: #94a3b8; /* Slate 400 */
+  /* 精修後的專業工作站配色 (GitHub Dimmed Inspired) */
+  --color-surface: #1c2128; 
+  --color-panel: #22272e;   
+  --color-card: #2d333b;    
+  --color-border: #444c56;  
   
-  --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  --color-primary: #539bf5; 
+  --color-success: #57ab5a; 
+  --color-warning: #c69026; 
+  
+  /* 文字顏色層次優化 */
+  --color-text-bright: #f0f6fc; /* 極清晰標題 */
+  --color-text: #adbac7;        /* 標準閱讀文案 */
+  --color-text-dim: #768390;    /* 次要說明文字 */
+  --color-text-muted: #545d68;  /* 裝飾性/路徑文字 */
+  
+  --color-primary-dim: rgba(83, 155, 245, 0.1);
+  --color-success-dim: rgba(87, 171, 90, 0.1);
+
+  --shadow-heavy: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+  --shadow-glass: inset 0 1px 1px 0 rgba(255, 255, 255, 0.05), 0 10px 20px 0 rgba(0, 0, 0, 0.2);
 }
 
-/* Scrollbar */
+/* 懸浮抽屜樣式 */
+.floating-panel {
+  @apply fixed top-16 bottom-6 bg-panel/90 backdrop-blur-xl border border-border shadow-heavy transition-all duration-500 z-40;
+}
+
+.floating-panel-left {
+  @apply left-4 rounded-xl;
+}
+
+.floating-panel-right {
+  @apply right-4 rounded-xl;
+}
+
+/* 畫布佔滿全螢幕 */
+.full-canvas-container {
+  @apply fixed inset-0 w-full h-full z-0 overflow-hidden;
+}
+
+.terminal-window {
+  @apply bg-panel border border-border rounded-xl shadow-heavy overflow-hidden;
+}
+
+.terminal-header {
+  @apply bg-panel px-5 py-3 border-b border-border flex items-center justify-between;
+}
+
+.terminal-body {
+  @apply p-8 font-sans text-sm leading-relaxed;
+}
+
+/* 提示字元裝飾 */
+.prompt::before {
+  content: '❯ ';
+  @apply text-primary font-bold;
+}
+
+/* 背景網格 (極簡化) */
+.bg-console-grid {
+  background-color: var(--color-surface);
+  background-image: radial-gradient(rgba(68, 76, 86, 0.3) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* 自定義捲軸 */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 10px;
+  height: 10px;
 }
 ::-webkit-scrollbar-track {
-  background: transparent;
+  @apply bg-surface;
 }
 ::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 10px;
+  @apply bg-border rounded-full border-4 border-surface;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
-}
-
-/* ReactFlow overrides */
-.react-flow__controls {
-  @apply shadow-none border-0 flex gap-2;
-  left: 280px !important; /* Clear left panel (w-64 + gap) */
-  bottom: 24px !important;
-  margin: 0 !important;
-}
-.react-flow__controls button {
-  @apply bg-panel/80 backdrop-blur-md border border-white/10 shadow-glass rounded-lg text-text-dim w-10 h-10 flex items-center justify-center transition-all duration-200;
-  fill: currentColor !important;
-}
-.react-flow__controls button:hover {
-  @apply bg-card text-text border-white/20;
-}
-.react-flow__minimap {
-  @apply bg-panel/80 backdrop-blur-md border border-white/10 shadow-glass rounded-xl overflow-hidden transition-all duration-300;
-  right: 24px !important;
-  bottom: 24px !important;
-  margin: 0 !important;
-}
-/* Shift minimap when right panel is open */
-.minimap-shifted {
-  right: 350px !important; /* Clear right panel (w-80 + gap) */
-}
-.react-flow__attribution {
-  @apply bg-transparent text-[10px] text-muted/50;
-}
-.react-flow__edge-path {
-  @apply transition-all duration-300;
-  stroke: #475569; /* Slate 600 - brighter than current border */
-  stroke-width: 2;
-}
-.react-flow__edge.selected .react-flow__edge-path {
-  @apply !stroke-primary;
-  stroke-width: 3;
+  @apply bg-text-dim;
 }

@@ -65,11 +65,12 @@ function ERCanvasInner() {
         }
       }
     }
-    return Array.from(visible)
+    // Ensure we only include tables that actually exist in the model
+    return Array.from(visible).filter(t => !!model.tables[t])
   }, [model, visibleGroups, keyword, selectedTable, focusMode])
 
   const { layoutNodes, layoutEdges } = useMemo(() => {
-    if (!model) return { layoutNodes: [], layoutEdges: [] }
+    if (!model || visibleTables.length === 0) return { layoutNodes: [], layoutEdges: [] }
     const nodes: Node[] = visibleTables.map((name) => ({
       id: name,
       type: 'tableNode',
@@ -108,7 +109,7 @@ function ERCanvasInner() {
         )
       }
     }
-  }, [selectedTable, setCenter, nodes])
+  }, [selectedTable, setCenter, nodes, zoom])
 
   // Auto-focus: fit bounds to active chunk tables during playback
   useEffect(() => {
@@ -182,17 +183,28 @@ function ERCanvasInner() {
         onConnect={onConnect}
         nodeTypes={nodeTypes}
         fitView
+        fitViewOptions={{ padding: 0.2 }}
         className="bg-surface"
         defaultEdgeOptions={{
           type: 'smoothstep',
-          style: { stroke: '#334155', strokeWidth: 1.5 },
+          style: { stroke: '#444c56', strokeWidth: 1.5 },
         }}
       >
-        <Background color="#1e293b" gap={24} size={1} variant={BackgroundVariant.Dots} />
-        <Controls />
+        <Background color="#444c56" gap={32} size={1} variant={BackgroundVariant.Dots} />
+        {nodes.length === 0 && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+            <div className="text-center space-y-4 opacity-40">
+              <div className="text-4xl font-black text-text-muted tracking-tighter uppercase">No_Tables_Visible</div>
+              <p className="text-xs font-mono text-text-dim max-w-xs mx-auto leading-relaxed">
+                Check visibility settings in the sidebar or adjust your filter.
+                {focusMode ? ' (Focus Mode is currently ON)' : ''}
+              </p>
+            </div>
+          </div>
+        )}
         <MiniMap
-          nodeColor="#3b82f6"
-          maskColor="rgba(2,6,23,0.8)"
+          nodeColor="#539bf5"
+          maskColor="rgba(13,17,23,0.8)"
           className={selectedTable ? 'minimap-shifted' : ''}
         />
       </ReactFlow>
@@ -209,9 +221,5 @@ function ERCanvasInner() {
 }
 
 export function ERCanvas() {
-  return (
-    <ReactFlowProvider>
-      <ERCanvasInner />
-    </ReactFlowProvider>
-  )
+  return <ERCanvasInner />
 }

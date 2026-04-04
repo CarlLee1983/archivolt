@@ -20,6 +20,15 @@ function KeyIcon() {
 
 function TableNodeComponent({ data, selected }: NodeProps) {
   const { table, isLowDetail, isHighlighted, isDimmed } = data as TableNodeData
+  
+  if (!table) {
+    return (
+      <div className="terminal-window p-4 border-red-500 bg-red-500/10 text-red-500 font-mono text-xs">
+        [ERROR] Table Data Missing
+      </div>
+    )
+  }
+
   const fkColumns = new Set([
     ...table.foreignKeys.flatMap((fk) => fk.columns),
     ...table.virtualForeignKeys.flatMap((vfk) => vfk.columns),
@@ -27,74 +36,68 @@ function TableNodeComponent({ data, selected }: NodeProps) {
 
   return (
     <div
-      className={`rounded-xl border transition-all duration-300 ${
+      className={`terminal-window transition-all duration-500 flex flex-col ${
         selected
-          ? 'border-primary ring-4 ring-primary/30 scale-[1.05] z-50 shadow-[0_0_40px_rgba(59,130,246,0.5)]'
+          ? 'border-primary ring-4 ring-primary/20 scale-[1.04] z-50 shadow-2xl bg-panel'
           : isLowDetail
-            ? 'border-white/40 bg-[#1e293b] shadow-2xl scale-[0.95]' // Solid high-contrast block when zoomed out
-            : 'border-white/10 backdrop-blur-md bg-white/5 hover:border-white/30 shadow-glass'
-      } ${isLowDetail ? 'min-w-[180px]' : 'min-w-[240px]'} ${isDimmed ? 'opacity-15' : ''} ${isHighlighted === true ? 'ring-2 ring-primary/60 shadow-[0_0_20px_rgba(59,130,246,0.3)]' : ''}`}
+            ? 'border-border bg-panel shadow-lg scale-[0.95]' 
+            : 'border-border/60 hover:border-primary/50'
+      } ${isLowDetail ? 'min-w-[180px]' : 'min-w-[280px]'} ${isDimmed ? 'opacity-20 grayscale' : ''}`}
     >
-      {/* Visual Indicator for LOD mode */}
-      {isLowDetail && (
-        <div className="h-2 w-full bg-primary rounded-t-xl" />
-      )}
-
-      {/* Header */}
-      <div className={`px-4 py-2.5 border-b flex items-center justify-between transition-all ${
-        selected
-          ? 'bg-primary/30 border-primary/20 text-white'
-          : isLowDetail
-            ? 'bg-[#0f172a] border-white/10'
-            : 'bg-white/5 border-white/5 text-text-dim'
+      {/* Header - 終端機風格 */}
+      <div className={`px-4 py-2 border-b flex items-center justify-between transition-all ${
+        selected ? 'bg-primary/10 border-primary/20' : 'bg-panel/50 border-border'
       }`}>
-        <span className={`font-mono truncate ${isLowDetail ? 'text-[13px] font-black text-white' : 'text-xs font-bold'}`}>
-          {table.name}
-        </span>
+        <div className="flex items-center gap-3">
+          <div className={`w-2 h-2 rounded-full ${selected ? 'bg-primary animate-pulse' : 'bg-slate-700'}`} />
+          <span className={`font-mono truncate tracking-tight ${isLowDetail ? 'text-[13px] font-black text-text-bright' : 'text-xs font-bold text-text-bright'}`}>
+            {table.name}
+          </span>
+        </div>
         {!isLowDetail && (
-          <div className="flex gap-1">
-            <div className="w-1.5 h-1.5 rounded-full bg-white/20" />
-          </div>
+          <span className="text-[9px] font-mono text-text-muted uppercase tracking-widest">{table.engine}</span>
         )}
       </div>
 
-      {/* Columns - Hidden in Low Detail */}
+      {/* Columns Area */}
       {!isLowDetail && (
-        <div className="px-3 py-2 bg-black/20 animate-in fade-in duration-300">
-          {table.columns.slice(0, 10).map((col) => (
-            <div key={col.name} className="text-[10px] font-mono flex items-center justify-between gap-4 py-1 group/col">
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="w-[10px] flex shrink-0 items-center justify-center">
-                  {col.primaryKey === 1 && <span className="text-red-400"><KeyIcon /></span>}
+        <div className="p-1 bg-card/30">
+          <div className="space-y-0.5">
+            {table.columns.slice(0, 12).map((col) => (
+              <div key={col.name} className="text-[11px] font-mono flex items-center justify-between gap-4 py-1.5 px-3 rounded hover:bg-primary/5 transition-all group/col">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-[12px] flex shrink-0 items-center justify-center">
+                    {col.primaryKey === 1 && <span className="text-warning"><KeyIcon /></span>}
+                  </div>
+                  <span className={`truncate ${
+                    col.primaryKey === 1
+                      ? 'text-warning font-bold'
+                      : fkColumns.has(col.name)
+                        ? 'text-primary font-bold'
+                        : 'text-text group-hover/col:text-text-bright'
+                  }`}>
+                    {col.name}
+                  </span>
                 </div>
-                <span className={`truncate transition-colors ${
-                  col.primaryKey === 1
-                    ? 'text-red-400 font-semibold'
-                    : fkColumns.has(col.name)
-                      ? 'text-emerald-400'
-                      : 'text-text-dim group-hover/col:text-text'
-                }`}>
-                  {col.name}
-                </span>
+                <span className="text-text-muted text-[9px] font-bold uppercase tracking-tighter opacity-40 group-hover/col:opacity-80">{col.type.replace(/\(.*\)/, '')}</span>
               </div>
-              <span className="text-muted/50 text-[9px] font-medium uppercase tracking-wider">{col.type.replace(/\(.*\)/, '')}</span>
-            </div>
-          ))}
-          {table.columns.length > 10 && (
-            <div className="text-[9px] text-muted/40 font-bold py-1 text-center italic">
-              + {table.columns.length - 10} more columns
-            </div>
-          )}
+            ))}
+            {table.columns.length > 12 && (
+              <div className="text-[10px] text-text-muted py-2 text-center italic border-t border-border/30 mt-1">
+                + {table.columns.length - 12} fields hidden
+              </div>
+            )}
+          </div>
         </div>
       )}
       
-      {/* Footer */}
-      <div className={`px-3 py-1.5 border-t flex items-center justify-between text-[9px] font-mono uppercase tracking-widest transition-all ${
-        isLowDetail ? 'bg-[#0f172a] text-white/60 border-white/5' : 'bg-white/[0.02] border-white/5 text-muted/50'
-      }`}>
-        <span>{table.engine}</span>
-        {!isLowDetail && <span className="tabular-nums">{table.rowCount.toLocaleString()} rows</span>}
-      </div>
+      {/* Footer Stats */}
+      {!isLowDetail && (
+        <div className="px-4 py-2 border-t border-border/30 flex items-center justify-between text-[10px] font-mono bg-panel/20">
+          <span className="text-text-dim uppercase tracking-widest font-bold">Tele_Rows</span>
+          <span className="text-text-bright font-black">{table.rowCount.toLocaleString()}</span>
+        </div>
+      )}
 
       <Handle 
         type="target" 
