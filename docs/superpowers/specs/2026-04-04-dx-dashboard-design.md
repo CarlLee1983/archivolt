@@ -73,7 +73,8 @@ start http://localhost:3100     # Windows
 │  Archivolt  v0.3.0        [Open Canvas] │  ← Navbar
 ├─────────────────────────────────────────┤
 │  🟢 系統狀態區                           │
-│  Proxy: 運行中  Port: 13306  QPS: 42/s  │  ← SSE 即時更新
+│  DB Proxy:   🟢 運行中  Port: 13306  QPS: 42/s    │  ← SSE 即時更新
+│  HTTP Proxy: 🟡 未啟動  (選用)                     │
 ├─────────────────────────────────────────┤
 │  📋 工作流程區                           │
 │  ① 提取 ✅  ② 整理 ✅  ③ 錄製 🔵        │
@@ -110,9 +111,10 @@ start http://localhost:3100     # Windows
 - [前往 Canvas →] 按鈕，跳轉 `/canvas`
 
 **Step 3：啟動錄製 Proxy**
-- 表單：Target Host、Port、Protocol（或貼 `.env` 路徑）
-- [啟動 Proxy] → 呼叫 `POST /api/recording/start`
-- 即時顯示 proxy 狀態（共用 SSE）
+- DB Proxy（必填）：Target Host、Port、Protocol（或貼 `.env` 路徑）、Proxy Port（預設 13306）
+- HTTP Proxy（選用）：☐ 同時啟動 HTTP Proxy — Port（預設 18080）、Target URL（上游 API，如 `http://localhost:8000`）
+- [啟動] → 呼叫 `POST /api/recording/start`
+- 即時顯示 DB Proxy + HTTP Proxy 各自狀態（共用 SSE）
 
 **Step 4：執行分析**
 - Session 下拉選擇
@@ -160,10 +162,17 @@ start http://localhost:3100     # Windows
 ```typescript
 interface StatusResponse {
   proxy: {
-    running: boolean
-    port: number | null
-    protocol: 'mysql' | 'postgres' | null
-    sessionId: string | null
+    db: {
+      running: boolean
+      port: number | null
+      protocol: 'mysql' | 'postgres' | null
+      sessionId: string | null
+    }
+    http: {
+      running: boolean
+      port: number | null
+      target: string | null  // upstream API URL
+    }
   }
   server: {
     version: string
@@ -183,13 +192,18 @@ SSE 串流，proxy 運行時每秒推送。
 
 ```
 event: stats
-data: {"qps":42,"totalQueries":1203,"sessionId":"abc","elapsedSeconds":87}
+data: {
+  "sessionId": "abc",
+  "elapsedSeconds": 87,
+  "db": { "qps": 42, "totalQueries": 1203 },
+  "http": { "chunksPerSecond": 3, "totalChunks": 241 }
+}
 
 event: stopped
-data: {"sessionId":"abc","totalQueries":1203}
+data: {"sessionId":"abc","totalQueries":1203,"totalChunks":241}
 ```
 
-實作：直接讀 `RecordingService` 的 `IncrementalStats`，無額外 overhead。
+實作：直接讀 `RecordingService` 的 `IncrementalStats`（DB）與 `HttpProxy` 的 chunk 計數，無額外 overhead。HTTP Proxy 未啟動時，`http` 欄位為 `null`。
 
 ### `GET /api/recording/sessions`（新增）
 
@@ -201,6 +215,7 @@ interface SessionSummary {
   startedAt: string
   stoppedAt: string | null
   queryCount: number
+  httpChunkCount: number  // HTTP proxy 錄製的 chunk 數，無 HTTP proxy 則為 0
   hasManifest: boolean
   hasOptimizationReport: boolean
 }
@@ -212,9 +227,14 @@ Wizard Step 3 呼叫，觸發 proxy 啟動。
 
 ```typescript
 interface StartRecordingRequest {
-  target: string      // "host:port"
+  target: string                   // "host:port"（DB）
   protocol?: 'mysql' | 'postgres'
-  proxyPort?: number
+  proxyPort?: number               // 預設 13306
+  httpProxy?: {
+    enabled: boolean
+    port: number                   // 預設 18080
+    target: string                 // 上游 API URL，如 "http://localhost:8000"
+  }
 }
 ```
 
@@ -247,8 +267,14 @@ TcpProxy / HttpProxy (WriteStream)
 ```typescript
 interface DashboardStore {
   // 系統狀態
-  proxyStatus: ProxyStatus | null
-  liveStats: LiveStats | null
+  proxyStatus: {
+    db: DbProxyStatus | null
+    http: HttpProxyStatus | null
+  }
+  liveStats: {
+    db: { qps: number; totalQueries: number } | null
+    http: { chunksPerSecond: number; totalChunks: number } | null
+  } | null
   
   // Session 列表
   sessions: SessionSummary[]
