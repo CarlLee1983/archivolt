@@ -1,6 +1,6 @@
 import path from 'node:path'
 import { mkdirSync, existsSync } from 'node:fs'
-import { writeFile } from 'node:fs/promises'
+import { writeFile, readFile } from 'node:fs/promises'
 import { RecordingRepository } from '@/Modules/Recording/Infrastructure/Persistence/RecordingRepository'
 import { ChunkAnalyzerService } from '@/Modules/Recording/Application/Services/ChunkAnalyzerService'
 import { renderManifest } from '@/Modules/Recording/Infrastructure/Renderers/ManifestMarkdownRenderer'
@@ -9,8 +9,11 @@ import { correlate } from '@/Modules/Recording/Application/Services/UnifiedCorre
 import { analyzeReadWriteRatio } from '@/Modules/Recording/Application/Strategies/ReadWriteRatioAnalyzer'
 import { detectN1Queries } from '@/Modules/Recording/Application/Strategies/N1QueryDetector'
 import { detectQueryFragmentation } from '@/Modules/Recording/Application/Strategies/QueryFragmentationDetector'
+import { parseDdlSchema } from '@/Modules/Recording/Application/Strategies/DdlSchemaParser'
+import { analyzeIndexCoverageGaps } from '@/Modules/Recording/Application/Strategies/IndexCoverageGapAnalyzer'
 import { renderOptimizationReport } from '@/Modules/Recording/Infrastructure/Renderers/OptimizationReportRenderer'
 import type { OptimizationReportData, EnabledLayer } from '@/Modules/Recording/Infrastructure/Renderers/OptimizationReportRenderer'
+import type { IndexGapFinding } from '@/Modules/Recording/Application/Strategies/IndexCoverageGapAnalyzer'
 
 export interface AnalyzeArgs {
   readonly sessionId: string
@@ -106,6 +109,16 @@ export async function runAnalyzeCommand(argv: string[]): Promise<void> {
     const n1Findings = apiFlows ? detectN1Queries(apiFlows, queries) : []
     const fragmentationFindings = apiFlows ? detectQueryFragmentation(apiFlows, queries) : []
 
+    let indexGapFindings: readonly IndexGapFinding[] | undefined
+
+    if (args.ddlPath) {
+      enabledLayers.push('ddl')
+      const ddlContent = await readFile(args.ddlPath, 'utf-8')
+      const schema = parseDdlSchema(ddlContent)
+      const gaps = analyzeIndexCoverageGaps(n1Findings, fragmentationFindings, schema)
+      indexGapFindings = gaps.length > 0 ? gaps : undefined
+    }
+
     const reportData: OptimizationReportData = {
       sessionId: args.sessionId,
       generatedAt: new Date().toISOString(),
@@ -113,6 +126,7 @@ export async function runAnalyzeCommand(argv: string[]): Promise<void> {
       readWriteReport,
       n1Findings: [...n1Findings],
       fragmentationFindings: [...fragmentationFindings],
+      indexGapFindings,
     }
 
     const md = renderOptimizationReport(reportData)
