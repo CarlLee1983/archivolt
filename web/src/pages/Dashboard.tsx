@@ -4,6 +4,7 @@ import { useDashboardStore } from '@/stores/dashboardStore'
 import { StatusSection } from '@/components/Dashboard/StatusSection'
 import { WorkflowSection } from '@/components/Dashboard/WorkflowSection'
 import { SessionList } from '@/components/Dashboard/SessionList'
+import { WizardDrawer } from '@/components/Wizard/WizardDrawer'
 
 export default function Dashboard() {
   const navigate = useNavigate()
@@ -65,6 +66,7 @@ export default function Dashboard() {
           </button>
         </div>
       </div>
+      <WizardDrawer />
     </div>
   )
 }
