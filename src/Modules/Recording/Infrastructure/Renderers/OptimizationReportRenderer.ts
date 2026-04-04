@@ -1,14 +1,7 @@
 import type { ReadWriteReport } from '@/Modules/Recording/Application/Strategies/ReadWriteRatioAnalyzer'
 import type { N1Finding } from '@/Modules/Recording/Application/Strategies/N1QueryDetector'
 import type { FragmentationFinding } from '@/Modules/Recording/Application/Strategies/QueryFragmentationDetector'
-
-// Local stub — will be replaced with real import in Task 7
-interface IndexGapFinding {
-  readonly table: string
-  readonly column: string
-  readonly suggestedIndex: string
-  readonly source: 'ddl' | 'explain' | 'both'
-}
+import type { IndexGapFinding } from '@/Modules/Recording/Application/Strategies/IndexCoverageGapAnalyzer'
 
 // Local stub — will be replaced with real import in Task 10
 interface FullScanFinding {
