@@ -8,7 +8,8 @@ import {
 import {
   createSession,
   stopSession,
-  updateSessionStats,
+  applyIncrementalStats,
+  type IncrementalStats,
   type RecordingSession,
   type CapturedQuery,
   type ProxyConfig,
@@ -16,16 +17,15 @@ import {
 import type { RecordingRepository } from '@/Modules/Recording/Infrastructure/Persistence/RecordingRepository'
 import { TcpProxy } from '@/Modules/Recording/Infrastructure/Proxy/TcpProxy'
 
-const FLUSH_INTERVAL_MS = 5000
-const FLUSH_BATCH_SIZE = 100
-
 export class RecordingService {
   private currentSession: RecordingSession | null = null
   private proxy: TcpProxy | null = null
-  private buffer: CapturedQuery[] = []
-  private allQueries: CapturedQuery[] = []
-  private flushTimer: ReturnType<typeof setInterval> | null = null
   private _proxyPort: number | null = null
+  private stats: IncrementalStats = {
+    totalQueries: 0,
+    byOperation: {},
+    tablesAccessed: new Set(),
+  }
 
   constructor(
     private readonly repo: RecordingRepository,
@@ -47,6 +47,7 @@ export class RecordingService {
 
     const session = createSession(config)
     this.currentSession = session
+    this.stats = { totalQueries: 0, byOperation: {}, tablesAccessed: new Set() }
 
     this.proxy = new TcpProxy({
       listenPort: config.listenPort,
@@ -56,11 +57,9 @@ export class RecordingService {
       onQuery: (query) => this.handleQuery(query),
     })
 
+    this.repo.openStreams(session.id)
     this._proxyPort = await this.proxy.start()
     await this.repo.saveSession(session)
-    this.repo.openStreams(session.id)
-
-    this.flushTimer = setInterval(() => this.flush(), FLUSH_INTERVAL_MS)
 
     return session
   }
@@ -72,29 +71,19 @@ export class RecordingService {
 
     const connectionCount = this.proxy?.connectionCount ?? 0
 
-    if (this.flushTimer) {
-      clearInterval(this.flushTimer)
-      this.flushTimer = null
-    }
-
     await this.proxy?.stop()
     this.proxy = null
     this._proxyPort = null
 
-    const sessionId = this.currentSession.id
-
-    // Final flush
-    await this.flush()
-    await this.repo.closeStreams(sessionId)
+    await this.repo.closeStreams(this.currentSession.id)
 
     const stopped = stopSession(
-      updateSessionStats(this.currentSession, this.allQueries, connectionCount),
+      applyIncrementalStats(this.currentSession, this.stats, connectionCount),
     )
-
     await this.repo.saveSession(stopped)
 
     this.currentSession = null
-    this.allQueries = []
+    this.stats = { totalQueries: 0, byOperation: {}, tablesAccessed: new Set() }
 
     return stopped
   }
@@ -124,18 +113,12 @@ export class RecordingService {
   }
 
   private handleQuery(query: CapturedQuery): void {
-    this.buffer.push(query)
-    this.allQueries.push(query)
-
-    if (this.buffer.length >= FLUSH_BATCH_SIZE) {
-      this.flush()
+    if (!this.currentSession) return
+    this.repo.appendQueries(this.currentSession.id, [query])
+    this.stats.totalQueries++
+    this.stats.byOperation[query.operation] = (this.stats.byOperation[query.operation] ?? 0) + 1
+    for (const t of query.tables) {
+      this.stats.tablesAccessed.add(t)
     }
-  }
-
-  private async flush(): Promise<void> {
-    if (this.buffer.length === 0 || !this.currentSession) return
-    const toFlush = [...this.buffer]
-    this.buffer = []
-    await this.repo.appendQueries(this.currentSession.id, toFlush)
   }
 }
