@@ -21,6 +21,8 @@ export class RecordingService {
   private currentSession: RecordingSession | null = null
   private proxy: TcpProxy | null = null
   private _proxyPort: number | null = null
+  private httpProxy: import('@/Modules/Recording/Infrastructure/Proxy/HttpProxy').HttpProxyService | null = null
+  private _httpChunkCount = 0
   private stats: IncrementalStats = {
     totalQueries: 0,
     byOperation: {},
@@ -41,11 +43,26 @@ export class RecordingService {
   }
 
   getHttpProxyStatus(): { running: boolean; port: number | null; target: string | null } {
+    if (!this.httpProxy) return { running: false, port: null, target: null }
     return {
-      running: false,
-      port: null,
+      running: true,
+      port: this.httpProxy.port,
       target: null,
     }
+  }
+
+  async startHttpProxy(config: { port: number; target: string; sessionId: string }): Promise<void> {
+    const { HttpProxyService } = await import('@/Modules/Recording/Infrastructure/Proxy/HttpProxy')
+    this.httpProxy = new HttpProxyService({
+      listenPort: config.port,
+      targetUrl: config.target,
+      sessionId: config.sessionId,
+      onChunk: async (chunks) => {
+        this._httpChunkCount += chunks.length
+        this.repo.appendHttpChunks(config.sessionId, chunks)
+      },
+    })
+    await this.httpProxy.start()
   }
 
   getLiveStats(): {
@@ -65,7 +82,12 @@ export class RecordingService {
         qps: elapsedSeconds > 0 ? Math.round(this.stats.totalQueries / elapsedSeconds) : 0,
         totalQueries: this.stats.totalQueries,
       },
-      http: null,
+      http: this.httpProxy
+        ? {
+            chunksPerSecond: elapsedSeconds > 0 ? Math.round(this._httpChunkCount / elapsedSeconds) : 0,
+            totalChunks: this._httpChunkCount,
+          }
+        : null,
     }
   }
 
@@ -111,6 +133,10 @@ export class RecordingService {
     await this.proxy?.stop()
     this.proxy = null
     this._proxyPort = null
+
+    this.httpProxy?.stop()
+    this.httpProxy = null
+    this._httpChunkCount = 0
 
     await this.repo.closeStreams(this.currentSession.id)
 

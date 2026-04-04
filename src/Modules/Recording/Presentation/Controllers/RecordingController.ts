@@ -1,3 +1,5 @@
+import path from 'node:path'
+import { existsSync } from 'node:fs'
 import type { IHttpContext } from '@/Shared/Presentation/IHttpContext'
 import { ApiResponse } from '@/Shared/Presentation/ApiResponse'
 import type { RecordingService } from '@/Modules/Recording/Application/Services/RecordingService'
@@ -17,6 +19,11 @@ export class RecordingController {
       targetHost: string
       targetPort: number
       listenPort?: number
+      httpProxy?: {
+        enabled: boolean
+        port: number
+        target: string
+      }
     }>()
 
     try {
@@ -25,15 +32,26 @@ export class RecordingController {
         targetHost: body.targetHost,
         targetPort: body.targetPort,
       })
+
+      if (body.httpProxy?.enabled) {
+        await this.service.startHttpProxy({
+          port: body.httpProxy.port ?? 18080,
+          target: body.httpProxy.target,
+          sessionId: session.id,
+        })
+      }
+
       return ctx.json(
         ApiResponse.success({
           ...session,
           proxyPort: this.service.proxyPort,
+          httpProxy: this.service.getHttpProxyStatus(),
         }),
         201,
       )
-    } catch (error: any) {
-      return ctx.json(ApiResponse.error('RECORDING_ERROR', error.message), 400)
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error)
+      return ctx.json(ApiResponse.error('RECORDING_ERROR', message), 400)
     }
   }
 
@@ -62,7 +80,24 @@ export class RecordingController {
 
   async list(ctx: IHttpContext): Promise<Response> {
     const sessions = await this.repo.listSessions()
-    return ctx.json(ApiResponse.success(sessions))
+    const analysisBaseDir = path.join(process.cwd(), 'data', 'analysis')
+
+    const enriched = await Promise.all(
+      sessions.map(async (session) => {
+        const sessionAnalysisDir = path.join(analysisBaseDir, session.id)
+        const hasManifest = existsSync(path.join(sessionAnalysisDir, 'manifest.md'))
+        const hasOptimizationReport = existsSync(path.join(sessionAnalysisDir, 'optimization-report.md'))
+        const httpChunks = await this.repo.loadHttpChunks(session.id)
+        return {
+          ...session,
+          httpChunkCount: httpChunks.length,
+          hasManifest,
+          hasOptimizationReport,
+        }
+      }),
+    )
+
+    return ctx.json(ApiResponse.success(enriched))
   }
 
   async getSession(ctx: IHttpContext): Promise<Response> {
