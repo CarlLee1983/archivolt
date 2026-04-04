@@ -15,6 +15,8 @@ export interface RecordArgs {
   readonly fromEnv?: string
   readonly sessionId?: string
   readonly protocol?: 'mysql' | 'postgres'
+  readonly httpProxyTarget?: string   // e.g., "http://localhost:3000"
+  readonly httpProxyPort: number      // default 4000
 }
 
 const VALID_SUBCOMMANDS = ['start', 'stop', 'status', 'list', 'summary'] as const
@@ -60,7 +62,14 @@ export function parseRecordArgs(argv: string[]): RecordArgs {
   const protocol =
     protocolIdx !== -1 ? (rest[protocolIdx + 1] as 'mysql' | 'postgres') : undefined
 
-  return { subcommand, targetHost, targetPort, listenPort, fromEnv, sessionId, protocol }
+  const httpProxyIdx = rest.indexOf('--http-proxy')
+  const httpProxyTarget = httpProxyIdx !== -1 ? rest[httpProxyIdx + 1] : undefined
+
+  const httpPortIdx = rest.indexOf('--http-port')
+  const httpProxyPort =
+    httpPortIdx !== -1 ? Number.parseInt(rest[httpPortIdx + 1], 10) : 4000
+
+  return { subcommand, targetHost, targetPort, listenPort, fromEnv, sessionId, protocol, httpProxyTarget, httpProxyPort }
 }
 
 function parseEnvFile(envPath: string): { host: string; port: number; driver?: string } {
@@ -117,20 +126,36 @@ export async function runRecordCommand(argv: string[]): Promise<void> {
         targetPort,
       })
 
+      // HTTP Proxy（選択的）
+      let httpProxy: import('@/Modules/Recording/Infrastructure/Proxy/HttpProxy').HttpProxyService | undefined
+      if (args.httpProxyTarget) {
+        const { HttpProxyService } = await import('@/Modules/Recording/Infrastructure/Proxy/HttpProxy')
+        httpProxy = new HttpProxyService({
+          listenPort: args.httpProxyPort,
+          targetUrl: args.httpProxyTarget,
+          sessionId: session.id,
+          onChunk: async (chunks) => {
+            await repo.appendHttpChunks(session.id, chunks)
+          },
+        })
+        await httpProxy.start()
+      }
+
       console.log(`
 Recording Started
 
 Session:  ${session.id}
 Protocol: ${protocol}
-Proxy:    127.0.0.1:${service.proxyPort}
-Target:   ${targetHost}:${targetPort}
-
+DB Proxy: 127.0.0.1:${service.proxyPort} → ${targetHost}:${targetPort}
+${httpProxy ? `HTTP Proxy: http://127.0.0.1:${args.httpProxyPort} → ${args.httpProxyTarget}` : ''}
 Point your application's DB connection to 127.0.0.1:${service.proxyPort}
+${httpProxy ? `Point your HTTP traffic to http://127.0.0.1:${args.httpProxyPort}` : ''}
 Press Ctrl+C to stop recording.
 `)
 
       process.on('SIGINT', async () => {
         const stopped = await service.stop()
+        httpProxy?.stop()
         console.log(`\nRecording stopped. ${stopped.stats.totalQueries} queries captured.`)
         console.log(`Session: ${stopped.id}`)
         process.exit(0)
