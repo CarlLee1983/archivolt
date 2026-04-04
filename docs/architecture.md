@@ -24,7 +24,10 @@ src/
 
     Recording/
       Domain/            Session, OperationMarker, ProtocolParser, HttpChunk, ApiCallFlow
-      Application/       RecordingService, ChunkAnalyzerService, UnifiedCorrelationService
+      Application/
+        Services/        RecordingService, ChunkAnalyzerService, UnifiedCorrelationService
+        Strategies/      FlowGrouper, HttpFlowGrouper, NoiseTableDetector, RelationInferrer,
+                         SqlSemanticInferrer, ReadWriteRatioAnalyzer (Layer 1: R/W ratio analysis)
       Infrastructure/
         Proxy/           TcpProxy, HttpProxy, MysqlProtocolParser
         Persistence/     RecordingRepository (JSONL for queries, markers, and HTTP chunks)

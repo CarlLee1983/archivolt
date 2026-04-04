@@ -8,7 +8,9 @@ test/unit/               Mirrors src/ layout
     Schema/              ExportService, ImportSchemaService, VirtualFKService,
                          all Exporters, Writers, Repository, Controller, Routes
     Recording/           QueryAnalyzer, RecordingService, Session, OperationMarker,
-                         QueryChunk, Protocol/TCP, Repository, Controller, Routes
+                         QueryChunk, Protocol/TCP, Repository, Controller, Routes,
+                         FlowGrouper, HttpFlowGrouper, NoiseTableDetector, UnifiedCorrelationService,
+                         ReadWriteRatioAnalyzer
     Doctor/              All 13 checks, DoctorService, DoctorReporter, DoctorCommand
   Domain/                ERModel, GroupingStrategy, RelationInferrer
   CLI/                   ExportCommand, RecordCommand
