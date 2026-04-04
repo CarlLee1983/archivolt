@@ -257,8 +257,18 @@ export class RecordingController {
 
   async getReport(ctx: IHttpContext): Promise<Response> {
     const id = ctx.getParam('id')!
-    const type = ctx.getParam('type')!
-    // TODO: Task 5 — 實作報告 JSON Renderer
-    return ctx.json(ApiResponse.error('NOT_IMPLEMENTED', `Report ${type} for session ${id} not yet implemented`), 501)
+    const type = ctx.getParam('type') as 'manifest' | 'optimize'
+
+    const analysisDir = path.join(process.cwd(), 'data', 'analysis', id)
+    const filename = type === 'optimize' ? 'optimization-report.json' : 'manifest.json'
+    const filePath = path.join(analysisDir, filename)
+
+    if (!existsSync(filePath)) {
+      return ctx.json(ApiResponse.error('NOT_FOUND', `Report not found for session ${id}`), 404)
+    }
+
+    const { readFile } = await import('node:fs/promises')
+    const content = await readFile(filePath, 'utf-8')
+    return ctx.json(ApiResponse.success(JSON.parse(content)))
   }
 }

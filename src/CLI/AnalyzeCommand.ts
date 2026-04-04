@@ -13,6 +13,7 @@ import { parseDdlSchema } from '@/Modules/Recording/Application/Strategies/DdlSc
 import { analyzeIndexCoverageGaps } from '@/Modules/Recording/Application/Strategies/IndexCoverageGapAnalyzer'
 import { renderOptimizationReport } from '@/Modules/Recording/Infrastructure/Renderers/OptimizationReportRenderer'
 import type { OptimizationReportData, EnabledLayer } from '@/Modules/Recording/Infrastructure/Renderers/OptimizationReportRenderer'
+import { renderOptimizationReportJson } from '@/Modules/Recording/Infrastructure/Renderers/OptimizationReportJsonRenderer'
 import type { IndexGapFinding } from '@/Modules/Recording/Application/Strategies/IndexCoverageGapAnalyzer'
 import { runExplainAnalysis, MysqlExplainAdapter } from '@/Modules/Recording/Application/Services/ExplainAnalyzer'
 import type { FullScanFinding } from '@/Modules/Recording/Application/Services/ExplainAnalyzer'
@@ -174,6 +175,8 @@ export async function runAnalyzeCommand(argv: string[]): Promise<void> {
     const dir = path.dirname(outPath)
     if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
     await writeFile(outPath, md, 'utf-8')
+    const jsonOutPath = outPath.replace('.md', '.json')
+    await writeFile(jsonOutPath, renderOptimizationReportJson(reportData), 'utf-8')
     console.log(`Optimization report written to: ${outPath}`)
     return
   }
