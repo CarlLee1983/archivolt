@@ -121,17 +121,22 @@ describe('confirmSuggestion', () => {
 })
 
 describe('ignoreSuggestion', () => {
-  it('removes the vFK (same effect as removeVirtualFK)', () => {
+  it('marks the vFK as ignored, preserving it in the list', () => {
     const newModel = ignoreSuggestion(baseModel, 'orders', 'vfk_auto_1')
 
-    expect(newModel.tables.orders.virtualForeignKeys.length).toBe(0)
+    const vfk = newModel.tables.orders.virtualForeignKeys.find((v) => v.id === 'vfk_auto_1')
+    expect(vfk).toBeDefined()
+    expect(vfk?.confidence).toBe('ignored')
+    expect(newModel.tables.orders.virtualForeignKeys.length).toBe(1)
   })
 
   it('returns a new model (immutable)', () => {
     const newModel = ignoreSuggestion(baseModel, 'orders', 'vfk_auto_1')
 
     expect(newModel).not.toBe(baseModel)
-    expect(baseModel.tables.orders.virtualForeignKeys.length).toBe(1)
+    // original unchanged
+    const original = baseModel.tables.orders.virtualForeignKeys.find((v) => v.id === 'vfk_auto_1')
+    expect(original?.confidence).toBe('auto-suggested')
   })
 })
 
