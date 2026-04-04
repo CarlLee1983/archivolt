@@ -37,6 +37,10 @@ export class HttpProxyService {
     return this.server?.port ?? this.config.listenPort
   }
 
+  get target(): string {
+    return this.config.targetUrl
+  }
+
   async start(): Promise<void> {
     const { targetUrl, sessionId, onChunk } = this.config
 

@@ -47,7 +47,7 @@ export class RecordingService {
     return {
       running: true,
       port: this.httpProxy.port,
-      target: null,
+      target: this.httpProxy.target,
     }
   }
 
