@@ -253,9 +253,12 @@ function CanvasPageInner() {
       </div>
 
       {/* ── Left Sidebar: Floating Drawer ── */}
-      <div className={`floating-panel floating-panel-left w-72 flex flex-col z-[45] pointer-events-auto ${
-        isLeftOpen ? 'translate-x-0 opacity-100' : '-translate-x-[calc(100%-16px)] opacity-90'
-      }`}>
+      <div
+        className={`floating-panel floating-panel-left w-72 flex flex-col z-[45] pointer-events-auto ${
+          isLeftOpen ? 'translate-x-0 opacity-100' : '-translate-x-[calc(100%-16px)] opacity-90 cursor-pointer'
+        }`}
+        onClick={!isLeftOpen ? () => setIsLeftOpen(true) : undefined}
+      >
         <div className="px-6 py-5 border-b border-border flex items-center justify-between shrink-0 bg-panel/50">
           <div className="flex items-center gap-3">
             <TerminalIcon />
