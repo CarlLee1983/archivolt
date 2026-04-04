@@ -18,7 +18,7 @@ export interface VirtualForeignKey {
   readonly columns: readonly string[]
   readonly refTable: string
   readonly refColumns: readonly string[]
-  readonly confidence: 'manual' | 'auto-suggested'
+  readonly confidence: 'manual' | 'auto-suggested' | 'ignored'
   readonly createdAt: Date
 }
 
@@ -57,7 +57,7 @@ export function createVirtualFK(
   columns: string[],
   refTable: string,
   refColumns: string[],
-  confidence: 'manual' | 'auto-suggested' = 'manual',
+  confidence: 'manual' | 'auto-suggested' | 'ignored' = 'manual',
 ): VirtualForeignKey {
   const id = `vfk_${Date.now()}_${_counter++}`
   return {

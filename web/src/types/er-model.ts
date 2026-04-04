@@ -18,7 +18,7 @@ export interface VirtualForeignKey {
   columns: string[]
   refTable: string
   refColumns: string[]
-  confidence: 'manual' | 'auto-suggested'
+  confidence: 'manual' | 'auto-suggested' | 'ignored'
   createdAt: string
 }
 
