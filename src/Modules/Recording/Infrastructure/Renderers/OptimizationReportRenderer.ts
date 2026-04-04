@@ -2,15 +2,7 @@ import type { ReadWriteReport } from '@/Modules/Recording/Application/Strategies
 import type { N1Finding } from '@/Modules/Recording/Application/Strategies/N1QueryDetector'
 import type { FragmentationFinding } from '@/Modules/Recording/Application/Strategies/QueryFragmentationDetector'
 import type { IndexGapFinding } from '@/Modules/Recording/Application/Strategies/IndexCoverageGapAnalyzer'
-
-// Local stub — will be replaced with real import in Task 10
-interface FullScanFinding {
-  readonly sql: string
-  readonly queryHash: string
-  readonly table: string
-  readonly estimatedRows: number
-  readonly suggestedIndex: string
-}
+import type { FullScanFinding } from '@/Modules/Recording/Application/Services/ExplainAnalyzer'
 
 export type EnabledLayer = 'pattern' | 'ddl' | 'explain'
 

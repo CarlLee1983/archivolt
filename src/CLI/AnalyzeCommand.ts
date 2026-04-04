@@ -14,6 +14,8 @@ import { analyzeIndexCoverageGaps } from '@/Modules/Recording/Application/Strate
 import { renderOptimizationReport } from '@/Modules/Recording/Infrastructure/Renderers/OptimizationReportRenderer'
 import type { OptimizationReportData, EnabledLayer } from '@/Modules/Recording/Infrastructure/Renderers/OptimizationReportRenderer'
 import type { IndexGapFinding } from '@/Modules/Recording/Application/Strategies/IndexCoverageGapAnalyzer'
+import { runExplainAnalysis, MysqlExplainAdapter } from '@/Modules/Recording/Application/Services/ExplainAnalyzer'
+import type { FullScanFinding } from '@/Modules/Recording/Application/Services/ExplainAnalyzer'
 
 export interface AnalyzeArgs {
   readonly sessionId: string
@@ -119,6 +121,32 @@ export async function runAnalyzeCommand(argv: string[]): Promise<void> {
       indexGapFindings = gaps.length > 0 ? gaps : undefined
     }
 
+    let fullScanFindings: readonly FullScanFinding[] | undefined
+    let explainWarning: string | undefined
+
+    if (args.explainDbUrl) {
+      enabledLayers.push('explain')
+      if (!args.explainDbUrl.startsWith('mysql://') && !args.explainDbUrl.startsWith('postgresql://') && !args.explainDbUrl.startsWith('postgres://')) {
+        console.error('--explain-db 需要完整 URL（e.g. mysql://user:pass@localhost:3306/mydb）')
+        process.exit(1)
+      }
+      if (args.explainDbUrl.startsWith('mysql://')) {
+        try {
+          const adapter = await MysqlExplainAdapter.connect(args.explainDbUrl)
+          try {
+            const findings = await runExplainAnalysis(queries, adapter, args.minRows)
+            fullScanFindings = findings.length > 0 ? findings : undefined
+          } finally {
+            await adapter.close()
+          }
+        } catch (err) {
+          explainWarning = `EXPLAIN 連線失敗，Layer 2b 跳過：${err instanceof Error ? err.message : String(err)}`
+        }
+      } else {
+        explainWarning = 'PostgreSQL EXPLAIN 支援在 v2 實作，Layer 2b 跳過'
+      }
+    }
+
     const reportData: OptimizationReportData = {
       sessionId: args.sessionId,
       generatedAt: new Date().toISOString(),
@@ -127,6 +155,8 @@ export async function runAnalyzeCommand(argv: string[]): Promise<void> {
       n1Findings: [...n1Findings],
       fragmentationFindings: [...fragmentationFindings],
       indexGapFindings,
+      fullScanFindings,
+      explainWarning,
     }
 
     const md = renderOptimizationReport(reportData)
