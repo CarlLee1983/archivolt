@@ -57,8 +57,16 @@ export class RecordingService {
       onQuery: (query) => this.handleQuery(query),
     })
 
+    try {
+      this._proxyPort = await this.proxy.start()
+    } catch (err) {
+      this.proxy = null
+      this.currentSession = null
+      this.stats = { totalQueries: 0, byOperation: {}, tablesAccessed: new Set() }
+      throw err
+    }
+
     this.repo.openStreams(session.id)
-    this._proxyPort = await this.proxy.start()
     await this.repo.saveSession(session)
 
     return session
