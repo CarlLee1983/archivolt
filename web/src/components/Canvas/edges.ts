@@ -43,6 +43,7 @@ export function buildEdges(
     }
 
     for (const vfk of table.virtualForeignKeys) {
+      if (vfk.confidence === 'ignored') continue
       const isManual = vfk.confidence === 'manual'
       const bothHighlighted = highlightTables
         ? highlightTables.has(table.name) && highlightTables.has(vfk.refTable)
