@@ -6,3 +6,4 @@ archivolt.json
 .env
 .env.local
 .vscode/
+.worktrees/
