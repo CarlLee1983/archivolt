@@ -2,7 +2,7 @@ import type { IHttpContext } from '@/Shared/Presentation/IHttpContext'
 import { ApiResponse } from '@/Shared/Presentation/ApiResponse'
 import type { JsonFileRepository } from '@/Modules/Schema/Infrastructure/Persistence/JsonFileRepository'
 import type { ExportService } from '@/Modules/Schema/Application/Services/ExportService'
-import { addVirtualFK, removeVirtualFK, confirmSuggestion, ignoreSuggestion } from '@/Modules/Schema/Application/Services/VirtualFKService'
+import { addVirtualFK, removeVirtualFK, confirmSuggestion, ignoreSuggestion, restoreIgnored } from '@/Modules/Schema/Application/Services/VirtualFKService'
 import type { ERModel } from '@/Modules/Schema/Domain/ERModel'
 import { inferRelations } from '@/Modules/Schema/Domain/RelationInferrer'
 import { computeGroups } from '@/Modules/Schema/Domain/GroupingStrategy'
@@ -69,6 +69,19 @@ export class SchemaController {
       const updated = ignoreSuggestion(model, body.tableName, body.vfkId)
       await this.repo.save(updated)
       return ctx.json(ApiResponse.success({ ignored: body.vfkId }))
+    } catch (error: any) {
+      return ctx.json(ApiResponse.error('INVALID', error.message), 400)
+    }
+  }
+
+  async restoreVirtualFK(ctx: IHttpContext): Promise<Response> {
+    const model = await this.repo.load()
+    if (!model) return ctx.json(ApiResponse.error('NOT_FOUND', 'No schema loaded'), 404)
+    const body = await ctx.getBody<{ tableName: string; vfkId: string }>()
+    try {
+      const updated = restoreIgnored(model, body.tableName, body.vfkId)
+      await this.repo.save(updated)
+      return ctx.json(ApiResponse.success({ restored: body.vfkId }))
     } catch (error: any) {
       return ctx.json(ApiResponse.error('INVALID', error.message), 400)
     }

@@ -8,6 +8,7 @@ export function registerSchemaRoutes(router: IModuleRouter, controller: SchemaCo
     r.delete('/virtual-fk/:id', (ctx) => controller.deleteVirtualFK(ctx))
     r.post('/virtual-fk/confirm', (ctx) => controller.confirmVirtualFK(ctx))
     r.post('/virtual-fk/ignore', (ctx) => controller.ignoreVirtualFK(ctx))
+    r.post('/virtual-fk/restore', (ctx) => controller.restoreVirtualFK(ctx))
     r.put('/groups', (ctx) => controller.updateGroups(ctx))
     r.post('/groups/regroup', (ctx) => controller.regroup(ctx))
     r.get('/suggestions', (ctx) => controller.getSuggestions(ctx))
