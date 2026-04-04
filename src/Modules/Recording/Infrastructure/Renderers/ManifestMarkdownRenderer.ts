@@ -5,6 +5,7 @@ import type {
   OperationEntry,
   OperationFlow,
 } from '@/Modules/Recording/Domain/OperationManifest'
+import type { ApiCallFlow } from '@/Modules/Recording/Domain/ApiCallFlow'
 
 function formatDate(ts: number): string {
   return new Date(ts).toISOString().replace('T', ' ').replace(/\.\d+Z$/, '')
@@ -76,7 +77,40 @@ function renderFlow(flow: OperationFlow, index: number): string {
   return lines.join('\n')
 }
 
-export function renderManifest(manifest: OperationManifest): string {
+function renderApiCallFlow(flow: ApiCallFlow, index: number): string {
+  const lines: string[] = []
+  lines.push(`### API ${index + 1}: ${flow.method} ${flow.path}`)
+  lines.push(`- **Status**: ${flow.statusCode}`)
+  lines.push(`- **Duration**: ${flow.durationMs}ms`)
+  lines.push(`- **DB Queries**: ${flow.dbQueries.length}`)
+
+  const n1Queries = flow.dbQueries.filter((q) => q.isN1Candidate)
+  if (n1Queries.length > 0) {
+    const uniqueN1 = new Set(n1Queries.map((q) => q.queryHash))
+    lines.push(`- **N+1 偵測**: ${uniqueN1.size} 個 query pattern 重複出現`)
+  }
+
+  const allTables = [...new Set(flow.dbQueries.flatMap((q) => q.tableTouched))].sort()
+  if (allTables.length > 0) {
+    lines.push(`- **Tables Touched**: ${allTables.map((t) => `\`${t}\``).join(', ')}`)
+  }
+
+  if (flow.dbQueries.length > 0) {
+    lines.push('- **Query Timeline**:')
+    for (const q of flow.dbQueries) {
+      const n1Label = q.isN1Candidate ? ' ⚠️ N+1' : ''
+      const tables = q.tableTouched.join(', ')
+      lines.push(`  - \`${q.queryHash}\` +${q.offsetMs}ms [${tables}]${n1Label}`)
+    }
+  }
+
+  return lines.join('\n')
+}
+
+export function renderManifest(
+  manifest: OperationManifest,
+  apiFlows?: readonly ApiCallFlow[],
+): string {
   const uniqueTables = new Set(manifest.tableMatrix.map((t) => t.table))
   const startDate = formatDate(manifest.recordedAt.start)
   const endDate = formatDate(manifest.recordedAt.end)
@@ -116,6 +150,19 @@ export function renderManifest(manifest: OperationManifest): string {
     sections.push('- **Tables accessed**: (none)')
   }
   sections.push('')
+
+  if (apiFlows && apiFlows.length > 0) {
+    sections.push('## API Call Flows')
+    sections.push('')
+    sections.push(
+      `> ${apiFlows.length} 個 HTTP request，已對應 DB query patterns（時間窗口 500ms）`,
+    )
+    sections.push('')
+    for (let i = 0; i < apiFlows.length; i++) {
+      sections.push(renderApiCallFlow(apiFlows[i], i))
+      sections.push('')
+    }
+  }
 
   sections.push('## Table Involvement Matrix')
   sections.push('')
