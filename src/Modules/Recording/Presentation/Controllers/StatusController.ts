@@ -21,6 +21,7 @@ export class StatusController {
             running: dbRunning,
             port: dbRunning ? this.service.proxyPort : null,
             sessionId: this.service.status()?.id ?? null,
+            protocol: this.service.getProtocol(),
           },
           http: {
             running: httpStatus.running,

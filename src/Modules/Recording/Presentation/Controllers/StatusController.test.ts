@@ -14,6 +14,7 @@ function makeService(overrides: Partial<{ isRecording: boolean; proxyPort: numbe
     proxyPort: null,
     status: vi.fn(() => null),
     getHttpProxyStatus: vi.fn(() => ({ running: false, port: null, target: null })),
+    getProtocol: vi.fn(() => null),
     ...overrides,
   } as any
 }

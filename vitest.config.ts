@@ -10,5 +10,6 @@ export default defineConfig({
   },
   test: {
     globals: true,
+    exclude: ['**/node_modules/**', '**/e2e/**', '**/.worktrees/**', 'web/e2e/**'],
   },
 })

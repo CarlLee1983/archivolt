@@ -91,6 +91,12 @@ export class RecordingService {
     }
   }
 
+  getProtocol(): 'mysql' | 'postgres' | null {
+    if (!this.currentSession) return null
+    const parserName = this.parser.constructor.name.toLowerCase()
+    return parserName.includes('mysql') ? 'mysql' : 'postgres'
+  }
+
   async start(config: ProxyConfig): Promise<RecordingSession> {
     if (this.isRecording) {
       throw new Error('already recording: stop current session first.')

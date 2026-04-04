@@ -88,7 +88,7 @@ export default function ReportViewer() {
             {rawMd ? (
               <ReactMarkdown>{rawMd}</ReactMarkdown>
             ) : (
-              <p className="text-muted text-sm">Markdown 版本需執行 archivolt analyze 才能產生</p>
+              <p className="text-muted text-sm">Raw Markdown 預覽尚未實作。請在終端執行 archivolt analyze 查看報告。</p>
             )}
           </div>
         ) : (
