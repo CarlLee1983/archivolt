@@ -207,7 +207,7 @@ function CanvasPageInner() {
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1 bg-card border border-border rounded-lg p-1">
               <button
-                className="px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-md bg-primary/15 text-primary border border-primary/30 cursor-pointer"
+                className="px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-md bg-primary/15 text-primary border border-primary/30 cursor-default"
               >
                 Canvas
               </button>
