@@ -2,10 +2,11 @@
 
 Archivolt is a local ER visualization and annotation tool. It helps developers understand, annotate, and export implicit relationships (Virtual Foreign Keys) in legacy databases.
 
-- **Backend**: Bun + TypeScript API server (Gravito / PlanetCore)
-- **Frontend**: React + ReactFlow interactive UI
-- **TCP proxy**: Query recording and SQL analysis with automatic relation hints
-- **Chrome extension**: Captures browser events as operation markers
+- **Visual Database Explorer**: Built with [ReactFlow](https://reactflow.dev/) for an interactive and zoomable schema visualization.
+- **Virtual Foreign Keys (vFK)**: Annotate "implicit" relationships between tables without modifying the production database schema.
+- **Unified Analysis**: Built-in HTTP and TCP proxies to correlate API calls with SQL patterns.
+- **End-to-End Observation**: Detect N+1 queries, noise tables, and group database queries into logical flows.
+- **Multi-Format Exporters**: Eloquent, Prisma, DBML, and Mermaid support.
 
 ## Tech Stack
 
@@ -13,6 +14,9 @@ Archivolt is a local ER visualization and annotation tool. It helps developers u
 |-------|------------|
 | Backend runtime | Bun |
 | Backend framework | Gravito / PlanetCore |
+| DB Recording Proxy | Custom TCP Proxy (MySQL/Postgres protocol) |
+| API Recording Proxy | Bun.serve() HTTP Reverse Proxy |
+| SQL Analysis | SQL normalization + SHA256 hashing |
 | Frontend | React 19 + Vite + Tailwind CSS 4 |
 | Graph visualization | @xyflow/react 12 (React Flow) |
 | Frontend state | Zustand 5 |
@@ -23,4 +27,4 @@ Archivolt is a local ER visualization and annotation tool. It helps developers u
 
 ## Version
 
-Currently v0.2.0
+Currently v0.3.0 (April 2026)

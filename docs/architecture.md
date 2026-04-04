@@ -23,13 +23,14 @@ src/
       Presentation/      SchemaController, Schema.routes.ts
 
     Recording/
-      Domain/            Session entity, OperationMarker, ProtocolParser interface, QueryChunk
-      Application/       RecordingService, QueryAnalyzer (SQL parsing and relation hints)
+      Domain/            Session, OperationMarker, ProtocolParser, HttpChunk, ApiCallFlow
+      Application/       RecordingService, ChunkAnalyzerService, UnifiedCorrelationService
       Infrastructure/
-        Proxy/           TcpProxy (TCP proxy), MysqlProtocolParser
-        Persistence/     RecordingRepository
+        Proxy/           TcpProxy, HttpProxy, MysqlProtocolParser
+        Persistence/     RecordingRepository (JSONL for queries, markers, and HTTP chunks)
+        Renderers/       ManifestMarkdownRenderer
         Providers/       RecordingServiceProvider
-      Presentation/      RecordingController, Recording.routes.ts
+      Presentation/      RecordingController, Recording.routes.ts, AnalyzeCommand
 
     Doctor/
       Domain/            IHealthCheck, IPrompter interfaces
@@ -107,11 +108,15 @@ Captures browser events (clicks, form submits, etc.) and sends them as **operati
 1. `dbcli schema --format json` export → `ImportSchemaService` converts to ERModel
 2. `JsonFileRepository` persists to `archivolt.json`
 3. Frontend loads schema via REST API; ReactFlow renders it
-4. **Query recording**: `TcpProxy` intercepts SQL → `MysqlProtocolParser` parses → `RecordingService` stores → `QueryAnalyzer` suggests implicit relations
-5. **Browser markers**: Chrome extension captures events → Recording API → correlated with SQL queries
-6. User annotates vFK → SchemaController API → `JsonFileRepository` persists
-7. CLI `export` → `ExportService` → `IExporter` → `IFileWriter`
-8. `doctor` command → `DoctorService` runs each `IHealthCheck` → report or interactive repair
+4. **Recording**: 
+   - `TcpProxy` intercepts SQL → `MysqlProtocolParser` parses → `RecordingRepository` appends to `queries.jsonl`.
+   - `HttpProxy` (optional) intercepts API traffic → `RecordingRepository` appends to `http_chunks.jsonl`.
+   - Chrome extension captures events → `RecordingRepository` appends to `markers.jsonl`.
+5. **Analysis**: `AnalyzeCommand` orchestrates `HttpFlowGrouper` and `UnifiedCorrelationService` to match API calls with DB patterns using a 500ms time window and SQL SHA256 hashing.
+6. **Reporting**: `ManifestMarkdownRenderer` generates a detailed report including bootstrap metadata, noise table filtering, and N+1 query detection.
+7. User annotates vFK → SchemaController API → `JsonFileRepository` persists
+8. CLI `export` → `ExportService` → `IExporter` → `IFileWriter`
+9. `doctor` command → `DoctorService` runs each `IHealthCheck` → report or interactive repair
 
 ## Persistence
 

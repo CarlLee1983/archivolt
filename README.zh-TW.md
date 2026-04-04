@@ -16,7 +16,9 @@
   - **Prisma**：生成包含資料源與模型關聯的 `schema.prisma`。
   - **DBML**：導出為相容於 [dbdiagram.io](https://dbdiagram.io) 的格式。
   - **Mermaid**：生成可嵌入 Markdown 文件的 ER 圖語法。
-- **查詢錄製**：運行 TCP 代理以捕捉應用程式的即時資料庫查詢 —— 無需資料庫憑據，只需將應用程式指向代理埠。
+- **查詢錄製與分組**：運行 TCP 代理以捕捉應用程式的即時資料庫查詢。使用導覽邊界 (navigate-boundary) 策略自動將查詢分組為邏輯「流程 (Flows)」，並具備噪音資料表自動偵測功能。
+- **HTTP 代理與 API 關聯分析**：內建 HTTP 反向代理，可捕捉 API 流量。自動在 500ms 時間窗口內將 HTTP 請求與資料庫查詢進行對齊，偵測 N+1 查詢模式並建立完整的行為模型。
+- **Chrome 擴充功能整合**：捕捉瀏覽器事件（點擊、fetch、導覽）並與資料庫及 HTTP 錄製同步，提供全棧可觀測性。
 - **強大的 CLI 指令**：直接將標註好的內容導出為檔案，或透過 Artisan 與 Laravel 專案深度整合。
 - **即時持久化**：所有變更會立即存入本地的 `archivolt.json`，這不僅是單一事實來源，也方便 LLM 讀取理解。
 
@@ -68,17 +70,18 @@
    # 開始錄製 —— 直接指定目標資料庫
    bun run dev record start --target localhost:3306
 
+   # 啟動 HTTP 反向代理以將 API 呼叫與資料庫查詢進行關聯
+   bun run dev record start --target localhost:3306 --http-proxy http://localhost:3000
+
    # 或從 .env 檔案讀取 DB_HOST / DB_PORT
    bun run dev record start --from-env /path/to/.env --port 13306
    ```
 
-   接著將應用程式的資料庫連線指向 `127.0.0.1:13306`（或您指定的埠）。按下 `Ctrl+C` 停止。
+   接著將應用程式的資料庫連線指向 `127.0.0.1:13306`（或您指定的埠），並將 HTTP 流量指向 `127.0.0.1:4000`（HTTP 代理預設埠）。按下 `Ctrl+C` 停止。
 
    ```bash
-   # 管理錄製會話
-   bun run dev record status              # 檢查錄製是否正在進行
-   bun run dev record list                # 列出所有會話
-   bun run dev record summary <session-id> # 查看會話的查詢統計
+   # 分析會話以查看流程、N+1 模式與 Bootstrap 資訊
+   bun run dev analyze <session-id> --stdout
    ```
 
 4. **使用 CLI 導出**：

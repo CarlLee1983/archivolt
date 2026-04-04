@@ -16,8 +16,9 @@ In many legacy systems, databases have numerous "implicit relationships"—colum
   - **Prisma**: Generates `schema.prisma` with datasource and model relations.
   - **DBML**: Exports to [dbdiagram.io](https://dbdiagram.io) compatible format.
   - **Mermaid**: Generates ER diagram syntax for embedding in Markdown documentation.
-- **Query Recording & Chunking**: Run a TCP proxy to capture live database queries. Automatically groups queries into logical "chunks" based on interaction time and browser events.
-- **Chrome Extension Integration**: Capture browser events (clicks, fetch, navigation) to sync with database recording for end-to-end debugging.
+- **Query Recording & Chunking**: Run a TCP proxy to capture live database queries. Automatically groups queries into logical "flows" using a navigate-boundary strategy with automatic noise table detection.
+- **HTTP Proxy & API Correlation**: Built-in HTTP reverse proxy to capture API traffic. Automatically correlates HTTP requests with database queries within a 500ms time window to detect N+1 query patterns and build end-to-end operation models.
+- **Chrome Extension Integration**: Capture browser events (clicks, fetch, navigation) to sync with database and HTTP recording for full-stack observability.
 - **Archivolt Doctor**: Built-in diagnostic tool to verify environment health, dependencies, and data integrity with interactive auto-fix suggestions.
 - **Powerful CLI**: Export your annotated schema directly to files or integrate with Laravel projects via Artisan.
 - **Real-time Persistence**: Changes are saved instantly to a local `archivolt.json`, which serves as a single source of truth that is also LLM-readable.
@@ -70,17 +71,18 @@ In many legacy systems, databases have numerous "implicit relationships"—colum
    # Start recording — specify target DB directly
    bun run dev record start --target localhost:3306
 
+   # Enable HTTP reverse proxy to correlate API calls with DB queries
+   bun run dev record start --target localhost:3306 --http-proxy http://localhost:3000
+
    # Or read DB_HOST / DB_PORT from a .env file
    bun run dev record start --from-env /path/to/.env --port 13306
    ```
 
-   Then point your application's DB connection to `127.0.0.1:13306` (or the port you specified). Press `Ctrl+C` to stop.
+   Then point your application's DB connection to `127.0.0.1:13306` (or the port you specified) and your HTTP traffic to `127.0.0.1:4000` (default port for HTTP proxy). Press `Ctrl+C` to stop.
 
    ```bash
-   # Manage recording sessions
-   bun run dev record status              # Check if a recording is active
-   bun run dev record list                # List all sessions
-   bun run dev record summary <session-id> # View query stats for a session
+   # Analyze a session to view flows, N+1 patterns, and bootstrap info
+   bun run dev analyze <session-id> --stdout
    ```
 
 4. **Exporting via CLI**:

@@ -22,10 +22,16 @@ bun run dev doctor --fix # Interactive repair
 
 # Query recording (TCP proxy)
 bun run dev record start --target localhost:3306 --port 13306
+bun run dev record start --http-proxy http://localhost:3000 --http-port 4000
 bun run dev record status
 bun run dev record list
 bun run dev record summary <session-id>
 
+# Post-recording Analysis
+bun run dev analyze <session-id>          # Output to Markdown file
+bun run dev analyze <session-id> --stdout # View analysis in console
+bun run dev analyze <session-id> --json   # Output raw analysis JSON
+```
 # Export (CLI)
 bun run dev export eloquent --laravel /path/to/laravel
 bun run dev export mermaid --output ./docs/schema
