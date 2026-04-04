@@ -7,7 +7,7 @@ export function registerRecordingRoutes(
   router: IModuleRouter,
   controller: RecordingController,
   statusController: StatusController,
-  _service: RecordingService,
+  service: RecordingService,
 ): void {
   router.group('/api', (r) => {
     r.get('/status', (ctx) => statusController.getStatus(ctx))
@@ -21,5 +21,36 @@ export function registerRecordingRoutes(
     r.get('/recordings/:id/chunks', (ctx) => controller.getChunks(ctx))
     r.get('/recordings/:id/chunks/:chunkId/queries', (ctx) => controller.getChunkQueries(ctx))
     r.get('/recordings/:id/manifest', (ctx) => controller.getManifest(ctx))
+    r.get('/report/:id/:type', (ctx) => controller.getReport(ctx))
+
+    // SSE — 回傳 raw Response（繞過 IHttpContext，直接以 ReadableStream 推送事件）
+    r.get('/recording/live', async (_ctx) => {
+      let timer: ReturnType<typeof setInterval> | null = null
+      const stream = new ReadableStream({
+        start(streamController) {
+          const send = (event: string, data: unknown) => {
+            streamController.enqueue(
+              new TextEncoder().encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`),
+            )
+          }
+          timer = setInterval(() => {
+            const stats = service.getLiveStats()
+            if (stats) send('stats', stats)
+            else send('idle', { recording: false })
+          }, 1000)
+        },
+        cancel() {
+          if (timer) clearInterval(timer)
+        },
+      })
+      return new Response(stream, {
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          Connection: 'keep-alive',
+          'Access-Control-Allow-Origin': '*',
+        },
+      })
+    })
   })
 }

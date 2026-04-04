@@ -48,6 +48,27 @@ export class RecordingService {
     }
   }
 
+  getLiveStats(): {
+    sessionId: string
+    elapsedSeconds: number
+    db: { qps: number; totalQueries: number }
+    http: { chunksPerSecond: number; totalChunks: number } | null
+  } | null {
+    if (!this.currentSession || !this.isRecording) return null
+
+    const elapsedSeconds = Math.floor((Date.now() - this.currentSession.startedAt) / 1000)
+
+    return {
+      sessionId: this.currentSession.id,
+      elapsedSeconds,
+      db: {
+        qps: elapsedSeconds > 0 ? Math.round(this.stats.totalQueries / elapsedSeconds) : 0,
+        totalQueries: this.stats.totalQueries,
+      },
+      http: null,
+    }
+  }
+
   async start(config: ProxyConfig): Promise<RecordingSession> {
     if (this.isRecording) {
       throw new Error('already recording: stop current session first.')

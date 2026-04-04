@@ -219,4 +219,11 @@ export class RecordingController {
 
     return ctx.json(ApiResponse.success(manifest))
   }
+
+  async getReport(ctx: IHttpContext): Promise<Response> {
+    const id = ctx.getParam('id')!
+    const type = ctx.getParam('type')!
+    // TODO: Task 5 — 實作報告 JSON Renderer
+    return ctx.json(ApiResponse.error('NOT_IMPLEMENTED', `Report ${type} for session ${id} not yet implemented`), 501)
+  }
 }
