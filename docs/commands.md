@@ -28,10 +28,12 @@ bun run dev record list
 bun run dev record summary <session-id>
 
 # Post-recording Analysis
-bun run dev analyze <session-id>          # Output to Markdown file
-bun run dev analyze <session-id> --stdout # View analysis in console
-bun run dev analyze <session-id> --json   # Output raw analysis JSON
-```
+bun run dev analyze <session-id>                   # Output operation manifest to Markdown file
+bun run dev analyze <session-id> --stdout          # Print JSON manifest to console
+bun run dev analyze <session-id> --format json     # Write JSON manifest to file
+bun run dev analyze <session-id> --format md       # Write Markdown manifest to file (default)
+# bun run dev analyze <session-id> --format optimize-md  # [coming soon] DB performance optimization report
+
 # Export (CLI)
 bun run dev export eloquent --laravel /path/to/laravel
 bun run dev export mermaid --output ./docs/schema

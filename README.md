@@ -18,6 +18,7 @@ In many legacy systems, databases have numerous "implicit relationships"—colum
   - **Mermaid**: Generates ER diagram syntax for embedding in Markdown documentation.
 - **Query Recording & Chunking**: Run a TCP proxy to capture live database queries. Automatically groups queries into logical "flows" using a navigate-boundary strategy with automatic noise table detection.
 - **HTTP Proxy & API Correlation**: Built-in HTTP reverse proxy to capture API traffic. Automatically correlates HTTP requests with database queries within a 500ms time window to detect N+1 query patterns and build end-to-end operation models.
+- **Database Performance Analysis**: Analyzes recorded sessions for per-table read/write ratios. Automatically flags tables that are candidates for Redis caching (≥90% read ratio) or Read Replica routing (≥80% read ratio with high volume). This is Layer 1 of the upcoming `--format optimize-md` optimization report.
 - **Chrome Extension Integration**: Capture browser events (clicks, fetch, navigation) to sync with database and HTTP recording for full-stack observability.
 - **Archivolt Doctor**: Built-in diagnostic tool to verify environment health, dependencies, and data integrity with interactive auto-fix suggestions.
 - **Powerful CLI**: Export your annotated schema directly to files or integrate with Laravel projects via Artisan.
