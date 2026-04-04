@@ -55,7 +55,35 @@ export function confirmSuggestion(model: ERModel, tableName: string, vfkId: stri
 }
 
 export function ignoreSuggestion(model: ERModel, tableName: string, vfkId: string): ERModel {
-  return removeVirtualFK(model, tableName, vfkId)
+  const table = model.tables[tableName]
+  return {
+    ...model,
+    tables: {
+      ...model.tables,
+      [tableName]: {
+        ...table,
+        virtualForeignKeys: table.virtualForeignKeys.map((v) =>
+          v.id === vfkId ? { ...v, confidence: 'ignored' as const } : v,
+        ),
+      },
+    },
+  }
+}
+
+export function restoreIgnored(model: ERModel, tableName: string, vfkId: string): ERModel {
+  const table = model.tables[tableName]
+  return {
+    ...model,
+    tables: {
+      ...model.tables,
+      [tableName]: {
+        ...table,
+        virtualForeignKeys: table.virtualForeignKeys.map((v) =>
+          v.id === vfkId ? { ...v, confidence: 'auto-suggested' as const } : v,
+        ),
+      },
+    },
+  }
 }
 
 const CONFIDENCE_RANK: Record<'high' | 'medium' | 'low', number> = {
