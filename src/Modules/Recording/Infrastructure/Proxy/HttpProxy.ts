@@ -105,7 +105,7 @@ export class HttpProxyService {
           bodyTruncated: resTruncated || undefined,
         }
 
-        await onChunk([requestChunk, responseChunk])
+        void onChunk([requestChunk, responseChunk])
 
         return new Response(resBuffer, {
           status: targetResponse.status,
