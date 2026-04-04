@@ -1,11 +1,20 @@
-import { existsSync, mkdirSync, readdirSync } from 'node:fs'
-import { writeFile, readFile } from 'node:fs/promises'
+import { existsSync, mkdirSync, readdirSync, createWriteStream } from 'node:fs'
+import type { WriteStream } from 'node:fs'
+import { readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import type { RecordingSession, CapturedQuery } from '@/Modules/Recording/Domain/Session'
 import type { OperationMarker } from '@/Modules/Recording/Domain/OperationMarker'
 import type { HttpChunk } from '@/Modules/Recording/Domain/HttpChunk'
 
+interface SessionStreams {
+  queries: WriteStream
+  markers: WriteStream
+  httpChunks: WriteStream
+}
+
 export class RecordingRepository {
+  private streams = new Map<string, SessionStreams>()
+
   constructor(private readonly baseDir: string) {
     if (!existsSync(baseDir)) {
       mkdirSync(baseDir, { recursive: true })
@@ -32,13 +41,64 @@ export class RecordingRepository {
     return path.join(this.sessionDir(sessionId), 'http_chunks.jsonl')
   }
 
+  private makeStream(filePath: string, sessionId: string, label: string): WriteStream {
+    const s = createWriteStream(filePath, { flags: 'a' })
+    s.on('error', (err) =>
+      console.error(`[Recording] stream error [${sessionId}/${label}]:`, err),
+    )
+    return s
+  }
+
+  openStreams(sessionId: string): void {
+    const dir = this.sessionDir(sessionId)
+    if (!existsSync(dir)) {
+      mkdirSync(dir, { recursive: true })
+    }
+    this.streams.set(sessionId, {
+      queries:    this.makeStream(this.queriesFile(sessionId),    sessionId, 'queries.jsonl'),
+      markers:    this.makeStream(this.markersFile(sessionId),    sessionId, 'markers.jsonl'),
+      httpChunks: this.makeStream(this.httpChunksFile(sessionId), sessionId, 'http_chunks.jsonl'),
+    })
+  }
+
+  async closeStreams(sessionId: string): Promise<void> {
+    const s = this.streams.get(sessionId)
+    if (!s) return
+    await Promise.all([
+      new Promise<void>((res) => s.queries.end(res)),
+      new Promise<void>((res) => s.markers.end(res)),
+      new Promise<void>((res) => s.httpChunks.end(res)),
+    ])
+    this.streams.delete(sessionId)
+  }
+
+  appendQueries(sessionId: string, queries: readonly CapturedQuery[]): void {
+    if (queries.length === 0) return
+    const s = this.streams.get(sessionId)
+    if (!s || s.queries.destroyed || s.queries.closed) return
+    s.queries.write(queries.map((q) => JSON.stringify(q)).join('\n') + '\n')
+  }
+
+  appendMarkers(sessionId: string, markers: readonly OperationMarker[]): void {
+    if (markers.length === 0) return
+    const s = this.streams.get(sessionId)
+    if (!s || s.markers.destroyed || s.markers.closed) return
+    s.markers.write(markers.map((m) => JSON.stringify(m)).join('\n') + '\n')
+  }
+
+  appendHttpChunks(sessionId: string, chunks: readonly HttpChunk[]): void {
+    if (chunks.length === 0) return
+    const s = this.streams.get(sessionId)
+    if (!s || s.httpChunks.destroyed || s.httpChunks.closed) return
+    s.httpChunks.write(chunks.map((c) => JSON.stringify(c)).join('\n') + '\n')
+  }
+
   async saveSession(session: RecordingSession): Promise<void> {
     const dir = this.sessionDir(session.id)
     if (!existsSync(dir)) {
       mkdirSync(dir, { recursive: true })
     }
-    const json = JSON.stringify(session, null, 2)
-    await writeFile(this.sessionFile(session.id), json, 'utf-8')
+    await writeFile(this.sessionFile(session.id), JSON.stringify(session, null, 2), 'utf-8')
   }
 
   async loadSession(sessionId: string): Promise<RecordingSession | null> {
@@ -48,20 +108,12 @@ export class RecordingRepository {
     return JSON.parse(text) as RecordingSession
   }
 
-  async appendQueries(sessionId: string, queries: readonly CapturedQuery[]): Promise<void> {
-    if (queries.length === 0) return
-    const lines = queries.map((q) => JSON.stringify(q)).join('\n') + '\n'
+  async loadQueries(sessionId: string): Promise<CapturedQuery[]> {
     const filePath = this.queriesFile(sessionId)
-    const existing = existsSync(filePath) ? await readFile(filePath, 'utf-8') : ''
-    await writeFile(filePath, existing + lines, 'utf-8')
-  }
-
-  async appendMarkers(sessionId: string, markers: readonly OperationMarker[]): Promise<void> {
-    if (markers.length === 0) return
-    const lines = markers.map((m) => JSON.stringify(m)).join('\n') + '\n'
-    const filePath = this.markersFile(sessionId)
-    const existing = existsSync(filePath) ? await readFile(filePath, 'utf-8') : ''
-    await writeFile(filePath, existing + lines, 'utf-8')
+    if (!existsSync(filePath)) return []
+    const text = await readFile(filePath, 'utf-8')
+    if (!text.trim()) return []
+    return text.trim().split('\n').filter(Boolean).map((line) => JSON.parse(line) as CapturedQuery)
   }
 
   async loadMarkers(sessionId: string): Promise<OperationMarker[]> {
@@ -69,29 +121,7 @@ export class RecordingRepository {
     if (!existsSync(filePath)) return []
     const text = await readFile(filePath, 'utf-8')
     if (!text.trim()) return []
-    return text
-      .trim()
-      .split('\n')
-      .map((line) => JSON.parse(line) as OperationMarker)
-  }
-
-  async loadQueries(sessionId: string): Promise<CapturedQuery[]> {
-    const filePath = this.queriesFile(sessionId)
-    if (!existsSync(filePath)) return []
-    const text = await readFile(filePath, 'utf-8')
-    if (!text.trim()) return []
-    return text
-      .trim()
-      .split('\n')
-      .map((line) => JSON.parse(line) as CapturedQuery)
-  }
-
-  async appendHttpChunks(sessionId: string, chunks: readonly HttpChunk[]): Promise<void> {
-    if (chunks.length === 0) return
-    const lines = chunks.map((c) => JSON.stringify(c)).join('\n') + '\n'
-    const filePath = this.httpChunksFile(sessionId)
-    const existing = existsSync(filePath) ? await readFile(filePath, 'utf-8') : ''
-    await writeFile(filePath, existing + lines, 'utf-8')
+    return text.trim().split('\n').filter(Boolean).map((line) => JSON.parse(line) as OperationMarker)
   }
 
   async loadHttpChunks(sessionId: string): Promise<HttpChunk[]> {
@@ -99,10 +129,7 @@ export class RecordingRepository {
     if (!existsSync(filePath)) return []
     const text = await readFile(filePath, 'utf-8')
     if (!text.trim()) return []
-    return text
-      .trim()
-      .split('\n')
-      .map((line) => JSON.parse(line) as HttpChunk)
+    return text.trim().split('\n').filter(Boolean).map((line) => JSON.parse(line) as HttpChunk)
   }
 
   async listSessions(): Promise<RecordingSession[]> {
