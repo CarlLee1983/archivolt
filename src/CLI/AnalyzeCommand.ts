@@ -26,6 +26,7 @@ export interface AnalyzeArgs {
   readonly explainDbUrl?: string
   readonly llm: boolean
   readonly minRows: number
+  readonly explainConcurrency: number
 }
 
 export function parseAnalyzeArgs(argv: string[]): AnalyzeArgs {
@@ -61,7 +62,10 @@ export function parseAnalyzeArgs(argv: string[]): AnalyzeArgs {
 
   const llm = rest.includes('--llm')
 
-  return { sessionId, output, format, stdout, ddlPath, explainDbUrl, llm, minRows }
+  const concurrencyIdx = rest.indexOf('--explain-concurrency')
+  const explainConcurrency = concurrencyIdx !== -1 ? Number(rest[concurrencyIdx + 1]) : 5
+
+  return { sessionId, output, format, stdout, ddlPath, explainDbUrl, llm, minRows, explainConcurrency }
 }
 
 export async function runAnalyzeCommand(argv: string[]): Promise<void> {
@@ -134,7 +138,7 @@ export async function runAnalyzeCommand(argv: string[]): Promise<void> {
         try {
           const adapter = await MysqlExplainAdapter.connect(args.explainDbUrl)
           try {
-            const findings = await runExplainAnalysis(queries, adapter, args.minRows)
+            const findings = await runExplainAnalysis(queries, adapter, args.minRows, args.explainConcurrency)
             fullScanFindings = findings.length > 0 ? findings : undefined
           } finally {
             await adapter.close()

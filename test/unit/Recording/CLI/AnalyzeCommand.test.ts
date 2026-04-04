@@ -82,4 +82,14 @@ describe('parseAnalyzeArgs — optimize-md flags', () => {
     const args = parseAnalyzeArgs(['analyze', 'rec_123', '--llm'])
     expect(args.llm).toBe(true)
   })
+
+  it('defaults explainConcurrency to 5', () => {
+    const args = parseAnalyzeArgs(['analyze', 'rec_123'])
+    expect(args.explainConcurrency).toBe(5)
+  })
+
+  it('parses --explain-concurrency', () => {
+    const args = parseAnalyzeArgs(['analyze', 'rec_123', '--explain-concurrency', '3'])
+    expect(args.explainConcurrency).toBe(3)
+  })
 })
