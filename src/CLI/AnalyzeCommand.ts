@@ -29,6 +29,8 @@ export interface AnalyzeArgs {
   readonly ddlPath?: string
   readonly explainDbUrl?: string
   readonly llm: boolean
+  readonly topN: number
+  readonly llmSeparate: boolean
   readonly minRows: number
   readonly explainConcurrency: number
 }
@@ -88,10 +90,15 @@ export function parseAnalyzeArgs(argv: string[]): AnalyzeArgs {
 
   const llm = rest.includes('--llm')
 
+  const topNIdx = rest.indexOf('--top-n')
+  const topN = topNIdx !== -1 ? Number(rest[topNIdx + 1]) : 5
+
+  const llmSeparate = rest.includes('--llm-separate')
+
   const concurrencyIdx = rest.indexOf('--explain-concurrency')
   const explainConcurrency = concurrencyIdx !== -1 ? Number(rest[concurrencyIdx + 1]) : 5
 
-  return { sessionId, fromFormat, fromPath, output, format, stdout, ddlPath, explainDbUrl, llm, minRows, explainConcurrency }
+  return { sessionId, fromFormat, fromPath, output, format, stdout, ddlPath, explainDbUrl, llm, topN, llmSeparate, minRows, explainConcurrency }
 }
 
 export async function runAnalyzeCommand(argv: string[]): Promise<void> {

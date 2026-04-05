@@ -3,8 +3,9 @@ import type { N1Finding } from '@/Modules/Recording/Application/Strategies/N1Que
 import type { FragmentationFinding } from '@/Modules/Recording/Application/Strategies/QueryFragmentationDetector'
 import type { IndexGapFinding } from '@/Modules/Recording/Application/Strategies/IndexCoverageGapAnalyzer'
 import type { FullScanFinding } from '@/Modules/Recording/Application/Services/ExplainAnalyzer'
+import type { LlmSuggestion } from '@/Modules/Recording/Application/Strategies/TopNSlowQueryExtractor'
 
-export type EnabledLayer = 'pattern' | 'ddl' | 'explain'
+export type EnabledLayer = 'pattern' | 'ddl' | 'explain' | 'llm'
 
 export interface OptimizationReportData {
   readonly sessionId: string
@@ -16,6 +17,9 @@ export interface OptimizationReportData {
   readonly indexGapFindings?: readonly IndexGapFinding[]
   readonly fullScanFindings?: readonly FullScanFinding[]
   readonly explainWarning?: string
+  readonly llmSuggestions?: readonly LlmSuggestion[]
+  readonly llmInterrupted?: boolean
+  readonly llmTotal?: number
 }
 
 function renderHeader(data: OptimizationReportData): string {
