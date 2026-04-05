@@ -6,8 +6,15 @@ import type { RecordingService } from '@/Modules/Recording/Application/Services/
 import type { RecordingRepository } from '@/Modules/Recording/Infrastructure/Persistence/RecordingRepository'
 import { buildChunks } from '@/Modules/Recording/Domain/QueryChunk'
 import { ChunkAnalyzerService } from '@/Modules/Recording/Application/Services/ChunkAnalyzerService'
+import { runAnalysis } from '@/Modules/Recording/Application/Services/AnalysisService'
 
 export class RecordingController {
+  private readonly jobs = new Map<string, {
+    status: 'running' | 'done' | 'error'
+    type: 'manifest' | 'optimize'
+    logs: string[]
+    error?: string
+  }>()
   constructor(
     private readonly service: RecordingService,
     private readonly repo: RecordingRepository,
@@ -270,5 +277,81 @@ export class RecordingController {
     const { readFile } = await import('node:fs/promises')
     const content = await readFile(filePath, 'utf-8')
     return ctx.json(ApiResponse.success(JSON.parse(content)))
+  }
+
+  async triggerAnalysis(ctx: IHttpContext): Promise<Response> {
+    const id = ctx.getParam('id')!
+    const body = await ctx.getBody<{ type: 'manifest' | 'optimize' }>()
+    const type = body.type
+
+    const existing = this.jobs.get(id)
+    if (existing?.status === 'running') {
+      return ctx.json(ApiResponse.error('ALREADY_RUNNING', 'Analysis already running for this session'), 409)
+    }
+
+    const job: { status: 'running' | 'done' | 'error'; type: 'manifest' | 'optimize'; logs: string[]; error?: string } = { status: 'running', type, logs: [] }
+    this.jobs.set(id, job)
+
+    const recordingsDir =
+      process.env.ARCHIVOLT_RECORDINGS_DIR ?? path.resolve(process.cwd(), 'data/recordings')
+
+    runAnalysis(id, type, (message) => { job.logs.push(message) }, recordingsDir)
+      .then(() => { job.status = 'done' })
+      .catch((err) => {
+        job.status = 'error'
+        job.error = err instanceof Error ? err.message : String(err)
+      })
+
+    return ctx.json(ApiResponse.success({ jobId: id }), 202)
+  }
+
+  async streamAnalysis(ctx: IHttpContext): Promise<Response> {
+    const id = ctx.getParam('id')!
+    const jobs = this.jobs
+    let sentCount = 0
+    const encoder = new TextEncoder()
+    let timer: ReturnType<typeof setInterval> | null = null
+
+    const stream = new ReadableStream({
+      start(controller) {
+        const send = (event: string, data: unknown) => {
+          controller.enqueue(
+            encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`),
+          )
+        }
+
+        timer = setInterval(() => {
+          const job = jobs.get(id)
+          if (!job) return
+
+          while (sentCount < job.logs.length) {
+            send('progress', { message: job.logs[sentCount] })
+            sentCount++
+          }
+
+          if (job.status === 'done') {
+            send('done', { type: job.type })
+            clearInterval(timer!)
+            controller.close()
+          } else if (job.status === 'error') {
+            send('error', { message: job.error ?? 'Unknown error' })
+            clearInterval(timer!)
+            controller.close()
+          }
+        }, 100)
+      },
+      cancel() {
+        if (timer) clearInterval(timer)
+      },
+    })
+
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        Connection: 'keep-alive',
+        'Access-Control-Allow-Origin': 'http://localhost:5173',
+      },
+    })
   }
 }
