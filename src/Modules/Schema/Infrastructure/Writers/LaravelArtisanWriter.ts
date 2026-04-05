@@ -80,7 +80,7 @@ export class LaravelArtisanWriter implements IFileWriter {
     this.validateLaravelProject()
 
     for (const [filename, content] of result.files) {
-      const modelName = filename.replace('.php', '')
+      const modelName = path.basename(filename, '.php')
       await this.exec(`php artisan make:model ${modelName}`, { cwd: this.laravelPath })
 
       const modelPath = path.join(this.laravelPath, 'app', 'Models', filename)
