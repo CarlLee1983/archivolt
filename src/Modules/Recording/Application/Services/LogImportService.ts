@@ -5,9 +5,11 @@ import type { RecordingRepository } from '@/Modules/Recording/Infrastructure/Per
 import { CanonicalJsonlParser } from '@/Modules/Recording/Infrastructure/Parsers/CanonicalJsonlParser'
 import { MysqlGeneralLogParser } from '@/Modules/Recording/Infrastructure/Parsers/MysqlGeneralLogParser'
 import { MysqlSlowQueryLogParser } from '@/Modules/Recording/Infrastructure/Parsers/MysqlSlowQueryLogParser'
+import { PostgresSlowQueryLogParser } from '@/Modules/Recording/Infrastructure/Parsers/PostgresSlowQueryLogParser'
+import { PostgresCsvLogParser } from '@/Modules/Recording/Infrastructure/Parsers/PostgresCsvLogParser'
 import type { IQueryLogParser } from '@/Modules/Recording/Infrastructure/Parsers/IQueryLogParser'
 
-export type ImportFormat = 'canonical' | 'general-log' | 'slow-log'
+export type ImportFormat = 'canonical' | 'general-log' | 'slow-log' | 'postgres-slow-log' | 'postgres-csv-log'
 
 let _importCounter = 0
 
@@ -80,9 +82,11 @@ export class LogImportService {
 
   private selectParser(format: ImportFormat): IQueryLogParser {
     switch (format) {
-      case 'canonical':   return new CanonicalJsonlParser()
-      case 'general-log': return new MysqlGeneralLogParser()
-      case 'slow-log':    return new MysqlSlowQueryLogParser()
+      case 'canonical':          return new CanonicalJsonlParser()
+      case 'general-log':        return new MysqlGeneralLogParser()
+      case 'slow-log':           return new MysqlSlowQueryLogParser()
+      case 'postgres-slow-log':  return new PostgresSlowQueryLogParser()
+      case 'postgres-csv-log':   return new PostgresCsvLogParser()
     }
   }
 }

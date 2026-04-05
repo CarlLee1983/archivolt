@@ -20,6 +20,7 @@ export interface FullScanFinding {
 
 export interface ExplainAnalyzerAdapter {
   explain(sql: string): Promise<readonly ExplainRow[]>
+  close(): Promise<void>
   readonly dialect: 'mysql' | 'postgresql'
 }
 

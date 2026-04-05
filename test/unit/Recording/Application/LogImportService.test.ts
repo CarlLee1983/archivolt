@@ -4,6 +4,8 @@ import { LogImportService } from '@/Modules/Recording/Application/Services/LogIm
 import { RecordingRepository } from '@/Modules/Recording/Infrastructure/Persistence/RecordingRepository'
 
 const CANONICAL_FIXTURE = path.resolve(__dirname, '../../../fixtures/logs/canonical.jsonl')
+const PG_SLOW_FIXTURE = path.resolve(__dirname, '../../../fixtures/logs/postgres-slow.log')
+const PG_CSV_FIXTURE = path.resolve(__dirname, '../../../fixtures/logs/postgres.csv')
 
 describe('LogImportService', () => {
   let repo: RecordingRepository
@@ -44,5 +46,23 @@ describe('LogImportService', () => {
     const selectQuery = queries.find((q) => q.operation === 'SELECT')
     expect(selectQuery).toBeDefined()
     expect(selectQuery!.tables).toContain('users')
+  })
+
+  it('routes postgres-slow-log to PostgresSlowQueryLogParser', async () => {
+    const svc = new LogImportService(repo)
+    const sessionId = await svc.import(PG_SLOW_FIXTURE, 'postgres-slow-log')
+    const queries = await repo.loadQueries(sessionId)
+    expect(queries.length).toBeGreaterThan(0)
+    // duration is mapped from durationMs
+    const slow = queries.find((q) => q.duration > 0)
+    expect(slow).toBeDefined()
+  })
+
+  it('routes postgres-csv-log to PostgresCsvLogParser', async () => {
+    const svc = new LogImportService(repo)
+    const sessionId = await svc.import(PG_CSV_FIXTURE, 'postgres-csv-log')
+    const queries = await repo.loadQueries(sessionId)
+    // CSV fixture has 3 LOG rows (1 WARNING skipped)
+    expect(queries).toHaveLength(3)
   })
 })

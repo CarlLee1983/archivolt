@@ -37,8 +37,11 @@ bun run dev analyze <session-id> --format md       # Write Markdown manifest to 
 bun run dev analyze --from general-log /path/to/mysql-general.log
 bun run dev analyze --from slow-log /path/to/slow.log
 bun run dev analyze --from canonical /path/to/queries.jsonl
+bun run dev analyze --from postgres-slow-log /path/to/postgresql.log   # PostgreSQL stderr log (log_min_duration_statement)
+bun run dev analyze --from postgres-csv-log /path/to/postgresql.csv    # PostgreSQL CSV log (log_destination=csvlog, PG 14+)
   # --from creates a virtual session from the log file and runs the full analysis pipeline.
   # Supports all existing flags (--format optimize-md, --ddl, --explain-db, --output, --stdout)
+  # For postgres-csv-log: enable with postgresql.conf: log_destination='csvlog', log_min_duration_statement=1000
 
 # DB Performance Optimization Report (--format optimize-md)
 bun run dev analyze <session-id> --format optimize-md

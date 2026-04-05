@@ -1,0 +1,11 @@
+2024-04-05 10:00:01.123 UTC [1001] app@mydb LOG:  duration: 1234.567 ms  statement: SELECT * FROM users WHERE id = 1;
+2024-04-05 10:00:02.456 UTC [1002] app@mydb LOG:  duration: 523.100 ms  execute <unnamed>: SELECT * FROM orders WHERE status = 'pending';
+2024-04-05 10:00:03.789 UTC [1003] app@mydb LOG:  duration: 88.000 ms  statement: SELECT u.id, u.name,
+	o.total
+	FROM users u
+	JOIN orders o ON o.user_id = u.id
+	WHERE u.active = true;
+2024-04-05 10:00:04.000 UTC [1004] app@mydb LOG:  duration: 200.000 ms  statement: SELECT * FROM products WHERE category = 'books';
+CONTEXT:  SQL function "get_products" during inlining
+DETAIL:  Some detail about the query
+HINT:  Consider adding an index on category

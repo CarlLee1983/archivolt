@@ -1,0 +1,6 @@
+2024-04-05 10:00:01.123 UTC,app,mydb,1001,127.0.0.1:55000,abc123.1,1,SELECT,2024-04-05 09:59:00 UTC,1/10,0,LOG,00000,"duration: 1234.567 ms  statement: SELECT * FROM users WHERE id = 1;",,,,,,,,,,client,0,0
+2024-04-05 10:00:02.456 UTC,app,mydb,1002,127.0.0.1:55001,abc124.1,1,SELECT,2024-04-05 09:59:00 UTC,1/11,0,LOG,00000,"duration: 523.100 ms  execute <unnamed>: SELECT * FROM orders WHERE status = 'pending';",,,,,,,,,,client,0,0
+2024-04-05 10:00:03.000 UTC,app,mydb,1003,127.0.0.1:55002,abc125.1,1,SELECT,2024-04-05 09:59:00 UTC,1/12,0,WARNING,42601,some warning message,,,,,,,,,,client,0,0
+2024-04-05 10:00:04.789 UTC,app,mydb,1004,127.0.0.1:55003,abc126.1,1,SELECT,2024-04-05 09:59:00 UTC,1/13,0,LOG,00000,"duration: 88.000 ms  statement: SELECT u.id, u.name
+FROM users u
+WHERE u.active = true;",,,,,,,,,,client,0,0

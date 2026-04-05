@@ -17,6 +17,7 @@ import type { OptimizationReportData, EnabledLayer } from '@/Modules/Recording/I
 import { renderOptimizationReportJson } from '@/Modules/Recording/Infrastructure/Renderers/OptimizationReportJsonRenderer'
 import type { IndexGapFinding } from '@/Modules/Recording/Application/Strategies/IndexCoverageGapAnalyzer'
 import { runExplainAnalysis, MysqlExplainAdapter } from '@/Modules/Recording/Application/Services/ExplainAnalyzer'
+import { PostgresExplainAdapter } from '@/Modules/Recording/Application/Services/PostgresExplainAdapter'
 import type { FullScanFinding } from '@/Modules/Recording/Application/Services/ExplainAnalyzer'
 import { extractTopN } from '@/Modules/Recording/Application/Strategies/TopNSlowQueryExtractor'
 import type { LlmSuggestion } from '@/Modules/Recording/Application/Strategies/TopNSlowQueryExtractor'
@@ -52,9 +53,9 @@ export function parseAnalyzeArgs(argv: string[]): AnalyzeArgs {
     fromFormat = rest[fromIdx + 1] as ImportFormat
     fromPath = rest[fromIdx + 2]
     if (!fromFormat || !fromPath) {
-      throw new Error('Usage: archivolt analyze --from <general-log|slow-log|canonical> <file-path>')
+      throw new Error('Usage: archivolt analyze --from <general-log|slow-log|canonical|postgres-slow-log|postgres-csv-log> <file-path>')
     }
-    const VALID_FORMATS = ['canonical', 'general-log', 'slow-log'] as const
+    const VALID_FORMATS = ['canonical', 'general-log', 'slow-log', 'postgres-slow-log', 'postgres-csv-log'] as const
     if (!VALID_FORMATS.includes(fromFormat as typeof VALID_FORMATS[number])) {
       throw new Error(
         `Unknown format "${fromFormat}". Valid options: ${VALID_FORMATS.join(', ')}`
@@ -65,7 +66,7 @@ export function parseAnalyzeArgs(argv: string[]): AnalyzeArgs {
     if (!sessionId || sessionId.startsWith('--')) {
       throw new Error(
         'Usage: archivolt analyze <session-id> [--format md|json|optimize-md] [--stdout]\n' +
-        '   or: archivolt analyze --from <general-log|slow-log|canonical> <file-path>'
+        '   or: archivolt analyze --from <general-log|slow-log|canonical|postgres-slow-log|postgres-csv-log> <file-path>'
       )
     }
   }
@@ -200,7 +201,24 @@ export async function runAnalyzeCommand(argv: string[]): Promise<void> {
           explainWarning = `EXPLAIN 連線失敗，Layer 2b 跳過：${err instanceof Error ? err.message : String(err)}`
         }
       } else {
-        explainWarning = 'PostgreSQL EXPLAIN 支援在 v2 實作，Layer 2b 跳過'
+        // PostgreSQL branch (postgresql:// or postgres://)
+        const isPg = args.explainDbUrl.startsWith('postgresql://') || args.explainDbUrl.startsWith('postgres://')
+        if (isPg) {
+          if (args.ddlPath) {
+            console.warn('⚠️  DDL 解析對 PostgreSQL 語法支援有限，建議搭配 --explain-db 確認結果')
+          }
+          try {
+            const adapter = await PostgresExplainAdapter.connect(args.explainDbUrl, args.explainConcurrency)
+            try {
+              const findings = await runExplainAnalysis(queries, adapter, args.minRows, args.explainConcurrency)
+              fullScanFindings = findings.length > 0 ? findings : undefined
+            } finally {
+              await adapter.close()
+            }
+          } catch (err) {
+            explainWarning = `PostgreSQL EXPLAIN 連線失敗，Layer 2b 跳過：${err instanceof Error ? err.message : String(err)}`
+          }
+        }
       }
     }
 

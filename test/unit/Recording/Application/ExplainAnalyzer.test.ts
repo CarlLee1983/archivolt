@@ -20,6 +20,7 @@ const makeQuery = (id: string, sql: string): CapturedQuery => ({
 const makeAdapter = (rows: ExplainRow[]): ExplainAnalyzerAdapter => ({
   dialect: 'mysql',
   explain: vi.fn(async () => rows),
+  close: vi.fn(async () => {}),
 })
 
 describe('runExplainAnalysis', () => {
