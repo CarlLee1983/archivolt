@@ -1,6 +1,6 @@
 // src/Modules/Recording/Application/Services/AnalysisService.ts
 import path from 'node:path'
-import { mkdirSync, existsSync } from 'node:fs'
+import { mkdirSync } from 'node:fs'
 import { writeFile } from 'node:fs/promises'
 import { RecordingRepository } from '@/Modules/Recording/Infrastructure/Persistence/RecordingRepository'
 import { ChunkAnalyzerService } from '@/Modules/Recording/Application/Services/ChunkAnalyzerService'
@@ -40,7 +40,7 @@ export async function runAnalysis(
     httpChunks.length > 0 ? correlate(pairHttpChunks(httpChunks), queries) : undefined
 
   const analysisDir = path.resolve(process.cwd(), `data/analysis/${sessionId}`)
-  if (!existsSync(analysisDir)) mkdirSync(analysisDir, { recursive: true })
+  mkdirSync(analysisDir, { recursive: true })
 
   if (type === 'manifest') {
     const md = renderManifest(manifest, apiFlows)

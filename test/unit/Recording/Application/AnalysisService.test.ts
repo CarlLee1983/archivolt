@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { runAnalysis } from '@/Modules/Recording/Application/Services/AnalysisService'
 import * as fsPromises from 'node:fs/promises'
 
-vi.mock('node:fs', () => ({ existsSync: vi.fn(() => true), mkdirSync: vi.fn() }))
+vi.mock('node:fs', () => ({ mkdirSync: vi.fn() }))
 vi.mock('node:fs/promises', () => ({ writeFile: vi.fn().mockResolvedValue(undefined) }))
 
 const mockRepo = {
@@ -62,5 +62,13 @@ describe('AnalysisService', () => {
     mockRepo.loadSession.mockResolvedValueOnce(null)
     await expect(runAnalysis('missing', 'manifest', () => {}, 'data/recordings'))
       .rejects.toThrow('Session not found: missing')
+  })
+
+  it('calls onProgress with optimize progress messages', async () => {
+    const logs: string[] = []
+    await runAnalysis('test-session', 'optimize', (m) => logs.push(m), 'data/recordings')
+    expect(logs[0]).toMatch(/Loaded session/)
+    expect(logs.some((m) => m.includes('N+1 detection complete'))).toBe(true)
+    expect(logs[logs.length - 1]).toMatch(/written/)
   })
 })
