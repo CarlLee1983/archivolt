@@ -26,7 +26,7 @@ export class PostgresProtocolParser implements IProtocolParser {
 
     if (type === MSG_QUERY) {
       const payload = data.subarray(5, msgEnd)
-      return { sql: payload.toString('utf-8').replace(/\0$/, '') }
+      return { sql: payload.toString('utf-8').replace(/\0$/, ''), queryType: 'text' }
     }
 
     if (type === MSG_PARSE) {
@@ -36,7 +36,7 @@ export class PostgresProtocolParser implements IProtocolParser {
       const queryStart = nameEnd + 1
       const queryEnd = payload.indexOf(0, queryStart)
       if (queryEnd === -1) return null
-      return { sql: payload.subarray(queryStart, queryEnd).toString('utf-8') }
+      return { sql: payload.subarray(queryStart, queryEnd).toString('utf-8'), queryType: 'prepare' }
     }
 
     return null
@@ -86,6 +86,15 @@ export class PostgresProtocolParser implements IProtocolParser {
     }
 
     return { type: 'unknown' }
+  }
+
+  // Postgres doesn't use MySQL-style STMT_EXECUTE packets
+  extractStmtExecute(_data: Buffer): { statementId: number } | null {
+    return null
+  }
+
+  parsePrepareResponse(_data: Buffer): { statementId: number } | null {
+    return null
   }
 
   isHandshakePhase(data: Buffer, fromServer: boolean): boolean {

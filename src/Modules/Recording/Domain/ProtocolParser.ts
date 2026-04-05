@@ -1,5 +1,6 @@
 export interface ParsedQuery {
   readonly sql: string
+  readonly queryType: 'text' | 'prepare'
 }
 
 export interface ParsedResultSet {
@@ -23,6 +24,8 @@ export type ParsedServerResponse =
 
 export interface IProtocolParser {
   extractQuery(data: Buffer): ParsedQuery | null
+  extractStmtExecute(data: Buffer): { statementId: number } | null
+  parsePrepareResponse(data: Buffer): { statementId: number } | null
   parseResponse(data: Buffer): ParsedServerResponse
   isHandshakePhase(data: Buffer, fromServer: boolean): boolean
 }

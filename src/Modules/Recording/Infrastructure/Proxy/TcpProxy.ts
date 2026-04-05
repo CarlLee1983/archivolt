@@ -20,6 +20,8 @@ interface ConnectionState {
   readonly sessionId: string
   handshakeComplete: boolean
   pendingQuery: { sql: string; startTime: number } | null
+  awaitingPrepareFor: string | null
+  statementMap: Map<number, string>
   serverSocket: Socket<ConnectionState> | null
 }
 
@@ -56,6 +58,8 @@ export class TcpProxy {
             sessionId: self.sessionId,
             handshakeComplete: false,
             pendingQuery: null,
+            awaitingPrepareFor: null,
+            statementMap: new Map(),
             serverSocket: null,
           }
           clientSocket.data = state
@@ -74,6 +78,17 @@ export class TcpProxy {
                   clientState.handshakeComplete = true
                   clientSocket.write(data)
                   return
+                }
+
+                // Handle PREPARE_OK: map statementId → SQL, do NOT capture as query
+                if (clientState.awaitingPrepareFor) {
+                  const prepareResult = parser.parsePrepareResponse(buf)
+                  if (prepareResult) {
+                    clientState.statementMap.set(prepareResult.statementId, clientState.awaitingPrepareFor)
+                    clientState.awaitingPrepareFor = null
+                    clientSocket.write(data)
+                    return
+                  }
                 }
 
                 // Process response for pending query
@@ -134,12 +149,22 @@ export class TcpProxy {
 
           const buf = Buffer.from(data)
 
-          // Try to extract a query
           const query = parser.extractQuery(buf)
           if (query) {
-            state.pendingQuery = {
-              sql: query.sql,
-              startTime: Date.now(),
+            if (query.queryType === 'text') {
+              state.pendingQuery = { sql: query.sql, startTime: Date.now() }
+            } else {
+              // PREPARE: wait for server PREPARE_OK to learn statement_id
+              state.awaitingPrepareFor = query.sql
+            }
+          } else {
+            // COM_STMT_EXECUTE: look up SQL from statement map
+            const stmtExec = parser.extractStmtExecute(buf)
+            if (stmtExec) {
+              const sql = state.statementMap.get(stmtExec.statementId)
+              if (sql) {
+                state.pendingQuery = { sql, startTime: Date.now() }
+              }
             }
           }
 

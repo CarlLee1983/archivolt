@@ -57,14 +57,52 @@ describe('MysqlProtocolParser', () => {
       expect(result!.sql).toBe('SELECT * FROM users')
     })
 
-    it('extracts SQL from COM_STMT_PREPARE packet', () => {
+    it('returns queryType text for COM_QUERY', () => {
+      const packet = buildComQuery('SELECT 1')
+      const result = parser.extractQuery(packet)
+      expect(result).not.toBeNull()
+      expect(result!.queryType).toBe('text')
+    })
+
+    it('extracts SQL from COM_STMT_PREPARE packet with queryType prepare', () => {
       const sql = 'SELECT * FROM users WHERE id = ?'
-      // COM_STMT_PREPARE = 0x16, same wire format as COM_QUERY
       const payload = Buffer.concat([Buffer.from([0x16]), Buffer.from(sql, 'utf-8')])
       const packet = buildPacket(0, payload)
       const result = parser.extractQuery(packet)
       expect(result).not.toBeNull()
       expect(result!.sql).toBe(sql)
+      expect(result!.queryType).toBe('prepare')
+    })
+
+    it('extractStmtExecute returns statementId for COM_STMT_EXECUTE', () => {
+      // COM_STMT_EXECUTE: 0x17 + uint32LE(statementId) + 1-byte flags + 4-byte iteration-count
+      const payload = Buffer.alloc(10)
+      payload[0] = 0x17
+      payload.writeUInt32LE(192, 1)
+      payload[5] = 0x00  // flags
+      payload.writeUInt32LE(1, 6)  // iteration-count
+      const packet = buildPacket(0, payload)
+      const result = parser.extractStmtExecute(packet)
+      expect(result).not.toBeNull()
+      expect(result!.statementId).toBe(192)
+    })
+
+    it('extractStmtExecute returns null for non-EXECUTE packets', () => {
+      const packet = buildComQuery('SELECT 1')
+      expect(parser.extractStmtExecute(packet)).toBeNull()
+    })
+
+    it('parsePrepareResponse extracts statementId from PREPARE_OK', () => {
+      // PREPARE_OK: 0x00 + uint32LE(statementId) + 2-byte num_columns + 2-byte num_params + ...
+      const payload = Buffer.alloc(12)
+      payload[0] = 0x00
+      payload.writeUInt32LE(192, 1)
+      payload.writeUInt16LE(1, 5)  // num_columns
+      payload.writeUInt16LE(1, 7)  // num_params
+      const packet = buildPacket(0, payload)
+      const result = parser.parsePrepareResponse(packet)
+      expect(result).not.toBeNull()
+      expect(result!.statementId).toBe(192)
     })
 
     it('returns null for non-COM_QUERY packets', () => {
