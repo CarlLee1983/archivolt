@@ -12,7 +12,11 @@ export class CanonicalJsonlParser implements IQueryLogParser {
     for await (const line of rl) {
       const trimmed = line.trim()
       if (!trimmed) continue
-      yield JSON.parse(trimmed) as QueryEvent
+      try {
+        yield JSON.parse(trimmed) as QueryEvent
+      } catch {
+        // Skip malformed lines silently — log files may contain partial writes or corruption
+      }
     }
   }
 }

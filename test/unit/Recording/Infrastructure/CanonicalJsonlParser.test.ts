@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import path from 'node:path'
+import { writeFile, unlink } from 'node:fs/promises'
+import os from 'node:os'
 import { CanonicalJsonlParser } from '@/Modules/Recording/Infrastructure/Parsers/CanonicalJsonlParser'
 
 const FIXTURE = path.resolve(__dirname, '../../../fixtures/logs/canonical.jsonl')
@@ -38,5 +40,24 @@ describe('CanonicalJsonlParser', () => {
     const parser = new CanonicalJsonlParser()
     const events = await collect(parser.parse(FIXTURE))
     expect(events.length).toBeGreaterThan(0)
+  })
+
+  it('skips malformed JSON lines without crashing', async () => {
+    const tmpPath = `${os.tmpdir()}/archivolt-test-${Date.now()}.jsonl`
+    await writeFile(tmpPath, [
+      '{"timestamp":1000,"sql":"SELECT 1"}',
+      'not valid json {{{',
+      '{"timestamp":2000,"sql":"SELECT 2"}',
+    ].join('\n'))
+
+    try {
+      const parser = new CanonicalJsonlParser()
+      const events = await collect(parser.parse(tmpPath))
+      expect(events).toHaveLength(2)
+      expect((events[0] as { sql: string }).sql).toBe('SELECT 1')
+      expect((events[1] as { sql: string }).sql).toBe('SELECT 2')
+    } finally {
+      await unlink(tmpPath)
+    }
   })
 })
