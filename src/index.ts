@@ -42,6 +42,12 @@ async function start() {
     process.exit(0)
   }
 
+  if (args[0] === 'install-skill') {
+    const { runInstallSkillCommand } = await import('@/CLI/InstallSkillCommand')
+    await runInstallSkillCommand(args)
+    process.exit(0)
+  }
+
   const inputIndex = args.indexOf('--input')
   const reimport = args.includes('--reimport')
 
