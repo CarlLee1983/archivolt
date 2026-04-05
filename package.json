@@ -3,9 +3,23 @@
   "version": "0.8.0",
   "description": "ER Model 視覺化標註工具 — 協助老舊專案建構資料關聯",
   "type": "module",
+  "bin": {
+    "archivolt": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "skills",
+    "README.md",
+    "README.zh-TW.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "engines": {
+    "bun": ">=1.0.0"
+  },
   "scripts": {
     "dev": "bun run --hot src/index.ts",
-    "build": "bun build src/index.ts --outdir dist --format esm --target bun",
+    "build": "bun build src/index.ts --outdir dist --format esm --target bun --banner '#!/usr/bin/env bun'",
     "start": "bun dist/index.js",
     "test": "bun test src test",
     "test:watch": "bun test --watch src test",
@@ -17,7 +31,8 @@
     "check": "bun run typecheck && bun run lint && bun run test",
     "dev:web": "cd web && bun run dev",
     "dev:all": "bun run dev & cd web && bun run dev",
-    "build:ext": "cd extension && bun run build.ts"
+    "build:ext": "cd extension && bun run build.ts",
+    "prepublishOnly": "bun run build"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.82.0",
