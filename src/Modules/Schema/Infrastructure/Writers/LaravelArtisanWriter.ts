@@ -19,6 +19,39 @@ export function parseStubContext(content: string, filePath: string): StubContext
   return { namespace, existingTraits, filePath }
 }
 
+const TRAIT_FQCN: Readonly<Record<string, string>> = {
+  HasFactory: 'Illuminate\\Database\\Eloquent\\Factories\\HasFactory',
+}
+
+export function applyStubContext(php: string, stub: StubContext): string {
+  // 1. Replace namespace
+  let result = php.replace(/^namespace [\w\\]+;/m, `namespace ${stub.namespace};`)
+
+  // 2. Inject missing FQCN imports before Model import
+  const missingImports = stub.existingTraits
+    .filter((t) => TRAIT_FQCN[t] && !result.includes(`use ${TRAIT_FQCN[t]};`))
+    .map((t) => `use ${TRAIT_FQCN[t]};`)
+
+  if (missingImports.length > 0) {
+    result = result.replace(
+      'use Illuminate\\Database\\Eloquent\\Model;',
+      `${missingImports.join('\n')}\nuse Illuminate\\Database\\Eloquent\\Model;`,
+    )
+  }
+
+  // 3. Inject missing trait uses at top of class body
+  const missingTraitUses = stub.existingTraits.filter(
+    (t) => TRAIT_FQCN[t] && !result.includes(`    use ${t};`),
+  )
+
+  if (missingTraitUses.length > 0) {
+    const traitBlock = missingTraitUses.map((t) => `    use ${t};`).join('\n')
+    result = result.replace(/(\bextends Model\b[^{]*\{)/, `$1\n${traitBlock}`)
+  }
+
+  return result
+}
+
 type ExecFn = (command: string, options: { cwd: string }) => Promise<void>
 
 async function defaultExec(command: string, options: { cwd: string }): Promise<void> {
