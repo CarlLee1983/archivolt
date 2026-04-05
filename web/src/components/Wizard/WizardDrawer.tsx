@@ -84,7 +84,7 @@ export function WizardDrawer() {
         }),
       })
       if (!res.success) {
-        setStartError(res.error ?? '啟動失敗')
+        setStartError(res.error?.message ?? '啟動失敗')
       }
     } catch (e) {
       setStartError(e instanceof Error ? e.message : '啟動失敗')

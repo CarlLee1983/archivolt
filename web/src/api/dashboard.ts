@@ -73,14 +73,14 @@ export const dashboardApi = {
     targetPort: number
     listenPort?: number
     httpProxy?: { enabled: boolean; port: number; target: string }
-  }): Promise<{ success: boolean; data?: unknown; error?: string }> =>
+  }): Promise<{ success: boolean; data?: unknown; error?: { code: string; message: string } }> =>
     fetch('/api/recording/start', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     }).then((r) => r.json()),
 
-  stopRecording: (): Promise<{ success: boolean; data?: unknown; error?: string }> =>
+  stopRecording: (): Promise<{ success: boolean; data?: unknown; error?: { code: string; message: string } }> =>
     fetch('/api/recording/stop', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
