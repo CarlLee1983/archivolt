@@ -1,3 +1,4 @@
 [test]
 # 排除 Playwright e2e 測試，避免 bun test 誤執行
 exclude = ["web/e2e/**", "**/e2e/**"]
+preload = ["./test/setup.ts"]
