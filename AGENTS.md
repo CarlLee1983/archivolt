@@ -12,6 +12,22 @@ Archivolt — Reverse-engineering tool for legacy projects: analyze and understa
 | `bun run check` | typecheck + lint + test |
 | `bun run test` | Vitest unit tests |
 
+## Skill Routing
+
+When the user's request matches an available skill, ALWAYS invoke it using the `activate_skill` (Gemini CLI) or `Skill` (Claude Code) tool as your FIRST action. Do NOT answer directly, do NOT use other tools first. The skill has specialized workflows that produce better results than ad-hoc answers.
+
+### Key routing rules:
+- **Product ideas, "is this worth building", brainstorming** → invoke `office-hours`
+- **Bugs, errors, "why is this broken", 500 errors** → invoke `investigate`
+- **Ship, deploy, push, create PR** → invoke `ship`
+- **QA, test the site, find bugs** → invoke `qa`
+- **Code review, check my diff** → invoke `review`
+- **Update docs after shipping** → invoke `document-release`
+- **Weekly retro** → invoke `retro`
+- **Design system, brand** → invoke `design-consultation`
+- **Visual audit, design polish** → invoke `design-review`
+- **Architecture review** → invoke `plan-eng-review`
+
 ## Documentation Update Policy
 
 **每個功能完成後，必須執行以下文件更新步驟：**
@@ -48,6 +64,12 @@ Archivolt — Reverse-engineering tool for legacy projects: analyze and understa
 - **Goal**: Analyze MySQL general logs, slow query logs, or custom JSONL without a live proxy session — useful for production hosts where running a TCP proxy is impractical.
 - **Design**: A canonical `QueryEvent` schema (timestamp, sql, connectionId?, durationMs?, rowsExamined?) decouples log format from analysis. `IQueryLogParser` implementations stream-parse each format line-by-line (O(1) memory). `LogImportService` converts events to `CapturedQuery[]` and creates a virtual `RecordingSession`, which the existing `AnalyzeCommand` pipeline consumes unchanged.
 - **CLI**: `archivolt analyze --from general-log|slow-log|canonical <path>` — composes with all existing flags (`--format optimize-md`, `--ddl`, `--explain-db`, `--stdout`).
+
+### 5. Layer 3 LLM Optimization Pipeline (2026-04-05)
+- **Goal**: Amplify the Layer 1+2 optimization report with per-finding Claude Haiku recommendations, grounded in actual query patterns, schema, and read/write profiles.
+- **Design**: `TopNSlowQueryExtractor` categorizes findings (full-scan → N+1 → fragmentation) with proportional slot distribution (`ceil(topN/3)` per category, unused slots flow forward). `LlmOptimizationService` calls `claude-haiku-4-5-20251001` once per finding via `@anthropic-ai/sdk`, using a structured prompt that includes the DDL schema context for referenced tables and the ReadWriteReport summary.
+- **CLI**: `--llm` (enable), `--top-n <n>` (default 5), `--llm-separate` (write LLM section to `.llm.md`). AbortSignal + SIGINT handler ensures partial results are preserved on Ctrl+C.
+- **Integration**: LLM section appended to `--format optimize-md` report or written separately. `enabledLayers` includes `'llm'` when active.
 
 ### 4. AI Skill Family (2026-04-05)
 - **Goal**: Turn Archivolt's reverse-engineering output into actionable architecture recommendations for legacy project refactoring.

@@ -61,10 +61,25 @@ bun run dev analyze <session-id> --format optimize-md \
   #   Connects to DB, runs EXPLAIN on unique SELECT patterns,
   #   detects full table scans (type=ALL, rows > --min-rows)
 
+ANTHROPIC_API_KEY=sk-ant-... \
+bun run dev analyze <session-id> --format optimize-md \
+  --llm --top-n 5
+  # + Layer 3: LLM recommendations via Claude Haiku
+  #   Ranks top-N findings (full-scan → N+1 → fragmentation) and gets
+  #   per-finding AI recommendations appended to the optimize-md report.
+  #   Requires ANTHROPIC_API_KEY. Supports Ctrl+C — partial results saved.
+
+ANTHROPIC_API_KEY=sk-ant-... \
+bun run dev analyze <session-id> --format optimize-md \
+  --llm --top-n 5 --llm-separate
+  # Same as above but writes LLM section to a separate <session>-optimize.llm.md file.
+
 # Output flags for optimize-md:
 #   --output <path>         Write report to specific path (default: data/analysis/<id>/optimization-report.md)
 #   --stdout                Print report to console
-#   --llm                   [deferred to v2] Enable LLM deep analysis via Claude API
+#   --llm                   Enable Layer 3 LLM deep analysis via Claude Haiku (requires ANTHROPIC_API_KEY)
+#   --top-n <n>             Number of findings to send to LLM (default: 5)
+#   --llm-separate          Write LLM recommendations to a separate .llm.md file
 
 # Export (CLI)
 bun run dev export eloquent --laravel /path/to/laravel

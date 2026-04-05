@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-04-05
+
+### Added
+- **Layer 3 LLM Optimization** (`--llm`): Get Claude Haiku recommendations for your top database bottlenecks. After Layer 1+2 identify the issues, `--llm` picks the highest-impact findings and asks the AI for actionable, context-aware fixes — grounded in your actual schema and read/write profile. No guessing.
+  - `--top-n <n>` (default 5): How many findings to send to the LLM. Ranked by severity: full table scans first, then N+1, then fragmentation.
+  - `--llm-separate`: Write the AI recommendations to a separate `<session>-optimize.llm.md` file instead of appending to the main report. Useful for sharing just the AI output.
+  - Ctrl+C safe: interrupt at any time and already-completed recommendations are preserved in the output.
+  - Prompt includes DDL schema context (tables referenced by the query) and the read/write ratio summary so recommendations are specific, not generic.
+- **`TopNSlowQueryExtractor`**: Pure function that categorizes and ranks findings from all three layers using proportional slot distribution (`⌈topN/3⌉` per category, unused slots flow forward to higher-priority categories).
+- **`LlmOptimizationService`**: Calls `claude-haiku-4-5-20251001` once per finding with a structured prompt. Streams results via callback so you see each recommendation as it arrives.
+
 ## [0.6.0] - 2026-04-05
 
 ### Added

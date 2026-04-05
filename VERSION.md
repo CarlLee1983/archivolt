@@ -4,11 +4,11 @@ This document tracks the release versions and compatibility requirements for all
 
 ---
 
-## 🚀 Current Release: v0.6.0 (2026-04-05)
+## 🚀 Current Release: v0.7.0 (2026-04-05)
 
 | Component | Version | Description |
 |-----------|---------|-------------|
-| **Archivolt CLI / API** | `0.6.0` | Core logic, Recording Proxy, Semantic Analysis, Optimization Report, Log Import, AI Skills. |
+| **Archivolt CLI / API** | `0.7.0` | Core logic, Recording Proxy, Semantic Analysis, Optimization Report, Log Import, AI Skills, LLM Layer 3. |
 | **Web Dashboard** | `0.6.0` | ReactFlow Canvas, VFK Review UX, Timeline Playback. |
 | **Chrome Extension** | `1.0.0` | Browser event capture (navigate, submit, click, request). |
 
@@ -26,7 +26,9 @@ This document tracks the release versions and compatibility requirements for all
 
 ## 📅 Release History (Summary)
 
-- **v0.6.0** (Current):
+- **v0.7.0** (Current):
+  - ✨ Added **Layer 3 LLM Optimization** (`--llm`, `--top-n`, `--llm-separate`) — Claude Haiku recommendations for top DB bottlenecks.
+- **v0.6.0**:
   - ✨ Added **AI Skill Family** — `archivolt-schema`, `archivolt-record`, `archivolt-analyze`, `archivolt-advisor` for guided reverse-engineering and architecture recommendation.
   - ✨ Added **`install-skill`** CLI command for Claude Code / Cursor / Codex distribution.
 - **v0.5.0**:

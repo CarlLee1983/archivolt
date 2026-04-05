@@ -2,12 +2,6 @@
 
 ## Pending Tasks
 
-### TODO-1: LlmOptimizationService — Layer 3
-**What:** `TopNSlowQueryExtractor`, `LlmOptimizationService`, `@anthropic-ai/sdk`, `--llm` and `--top-n` CLI flags.
-**Why:** LLM tier needs reliable signal input. Layer 1 + 2 findings must be validated against real sessions before adding LLM amplification.
-**Current Status:** Layer 1 + 2 are now complete and validated. Ready for implementation.
-**Where to start:** Use Haiku 4.5 as the model; re-read the design doc prompt template.
-
 ### TODO-2: Advanced VFK Inference Engine
 **What:** Enhance `RelationInferrer` to use data-profile analysis (e.g., checking if values in column A exist in column B) instead of just name-based matching.
 **Status:** Backlog.
@@ -15,6 +9,11 @@
 ---
 
 ## Completed Tasks
+
+### Layer 3 LLM Optimization (v0.7.0)
+- **✅ DONE — TopNSlowQueryExtractor**: Categorized ranking (full-scan → N+1 → fragmentation) with proportional slot distribution.
+- **✅ DONE — LlmOptimizationService**: Per-finding `claude-haiku-4-5-20251001` calls with AbortSignal support, prompt context includes DDL schema + read/write profile.
+- **✅ DONE — `--llm` / `--top-n` / `--llm-separate` CLI flags**: Integrated into `--format optimize-md` pipeline with SIGINT-safe partial output.
 
 ### Optimization Report Generator (Layer 1 & 2)
 - **✅ DONE — Corpus-based DDL fixtures for DdlSchemaParser tests**: 5 fixture files in `test/fixtures/ddl/` + 5 corpus tests.
