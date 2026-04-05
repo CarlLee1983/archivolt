@@ -90,6 +90,7 @@ When the user's request matches an available skill, ALWAYS invoke it using the `
 
 - [Overview & Tech Stack](docs/overview.md)
 - [Commands](docs/commands.md)
+- [Plugin Install Guide](docs/plugin-install.md) — Install AI skills to Claude Code / Cursor / Codex
 - [Architecture](docs/architecture.md) — Backend DDD modules, frontend, Chrome extension, data flow
 - [Testing](docs/testing.md)
 - [Conventions](docs/conventions.md)
