@@ -3,6 +3,22 @@ import path from 'node:path'
 import type { ExportResult } from '@/Modules/Schema/Infrastructure/Exporters/IExporter'
 import type { IFileWriter } from './IFileWriter'
 
+export interface StubContext {
+  readonly namespace: string
+  readonly existingTraits: string[]
+  readonly filePath: string
+}
+
+export function parseStubContext(content: string, filePath: string): StubContext {
+  const nsMatch = content.match(/^namespace\s+([\w\\]+);/m)
+  const namespace = nsMatch?.[1] ?? 'App\\Models'
+
+  const traitMatches = [...content.matchAll(/^\s+use\s+(\w+);/gm)]
+  const existingTraits = traitMatches.map((m) => m[1])
+
+  return { namespace, existingTraits, filePath }
+}
+
 type ExecFn = (command: string, options: { cwd: string }) => Promise<void>
 
 async function defaultExec(command: string, options: { cwd: string }): Promise<void> {
