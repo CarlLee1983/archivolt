@@ -18,6 +18,10 @@ import { renderOptimizationReportJson } from '@/Modules/Recording/Infrastructure
 import type { IndexGapFinding } from '@/Modules/Recording/Application/Strategies/IndexCoverageGapAnalyzer'
 import { runExplainAnalysis, MysqlExplainAdapter } from '@/Modules/Recording/Application/Services/ExplainAnalyzer'
 import type { FullScanFinding } from '@/Modules/Recording/Application/Services/ExplainAnalyzer'
+import { extractTopN } from '@/Modules/Recording/Application/Strategies/TopNSlowQueryExtractor'
+import type { LlmSuggestion } from '@/Modules/Recording/Application/Strategies/TopNSlowQueryExtractor'
+import { runLlmOptimization } from '@/Modules/Recording/Application/Services/LlmOptimizationService'
+import { renderLlmSection } from '@/Modules/Recording/Infrastructure/Renderers/LlmSuggestionsRenderer'
 
 export interface AnalyzeArgs {
   readonly sessionId?: string        // undefined when --from is used
@@ -200,6 +204,55 @@ export async function runAnalyzeCommand(argv: string[]): Promise<void> {
       }
     }
 
+    // Layer 3: LLM analysis
+    let llmSuggestions: readonly LlmSuggestion[] | undefined
+    let llmInterrupted = false
+    let llmTotal = 0
+
+    if (args.llm) {
+      if (!process.env.ANTHROPIC_API_KEY) {
+        console.error('Error: ANTHROPIC_API_KEY is not set. Export it before using --llm.\n  export ANTHROPIC_API_KEY=sk-ant-...')
+        process.exit(1)
+      }
+
+      enabledLayers.push('llm')
+      const topNEntries = extractTopN(
+        [...n1Findings],
+        [...fragmentationFindings],
+        fullScanFindings ? [...fullScanFindings] : [],
+        args.topN,
+      )
+      llmTotal = topNEntries.length
+
+      const controller = new AbortController()
+      const sigintHandler = () => {
+        console.log('\n⚠ Interrupted — saving partial results...')
+        controller.abort()
+      }
+      process.once('SIGINT', sigintHandler)
+
+      const collected: LlmSuggestion[] = []
+      console.log(`Running Layer 3 LLM analysis (${topNEntries.length} findings)...`)
+
+      try {
+        await runLlmOptimization({
+          topNEntries,
+          readWriteReport,
+          ddlSchema: args.ddlPath ? parseDdlSchema(await readFile(args.ddlPath, 'utf-8')) : undefined,
+          onResult: (s) => {
+            collected.push(s)
+            console.log(`  [${collected.length}/${topNEntries.length}] ${s.findingType}: done`)
+          },
+          signal: controller.signal,
+        })
+        llmInterrupted = controller.signal.aborted
+      } finally {
+        process.removeListener('SIGINT', sigintHandler)
+      }
+
+      llmSuggestions = collected.length > 0 ? collected : undefined
+    }
+
     const reportData: OptimizationReportData = {
       sessionId: sessionId,
       generatedAt: new Date().toISOString(),
@@ -210,19 +263,36 @@ export async function runAnalyzeCommand(argv: string[]): Promise<void> {
       indexGapFindings,
       fullScanFindings,
       explainWarning,
+      llmSuggestions,
+      llmInterrupted: llmInterrupted || undefined,
+      llmTotal: llmTotal > 0 ? llmTotal : undefined,
     }
 
-    const md = renderOptimizationReport(reportData)
-
     if (args.stdout) {
-      console.log(md)
+      console.log(renderOptimizationReport(reportData))
       return
     }
 
     const outPath = args.output ?? path.resolve(process.cwd(), `data/analysis/${sessionId}/optimization-report.md`)
     const dir = path.dirname(outPath)
     if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
-    await writeFile(outPath, md, 'utf-8')
+
+    if (args.llm && args.llmSeparate && llmSuggestions && llmSuggestions.length > 0) {
+      // Write LLM section to separate file — strip it from the main report
+      const reportDataWithoutLlm: OptimizationReportData = {
+        ...reportData,
+        llmSuggestions: undefined,
+        llmInterrupted: undefined,
+        llmTotal: undefined,
+      }
+      const llmOutPath = outPath.replace('.md', '.llm.md')
+      await writeFile(llmOutPath, renderLlmSection(llmSuggestions, llmInterrupted, llmTotal), 'utf-8')
+      console.log(`LLM recommendations written to: ${llmOutPath}`)
+      await writeFile(outPath, renderOptimizationReport(reportDataWithoutLlm), 'utf-8')
+    } else {
+      await writeFile(outPath, renderOptimizationReport(reportData), 'utf-8')
+    }
+
     const jsonOutPath = outPath.replace('.md', '.json')
     await writeFile(jsonOutPath, renderOptimizationReportJson(reportData), 'utf-8')
     console.log(`Optimization report written to: ${outPath}`)

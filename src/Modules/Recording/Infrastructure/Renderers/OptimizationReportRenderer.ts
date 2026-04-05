@@ -1,3 +1,4 @@
+import { renderLlmSection } from '@/Modules/Recording/Infrastructure/Renderers/LlmSuggestionsRenderer'
 import type { ReadWriteReport } from '@/Modules/Recording/Application/Strategies/ReadWriteRatioAnalyzer'
 import type { N1Finding } from '@/Modules/Recording/Application/Strategies/N1QueryDetector'
 import type { FragmentationFinding } from '@/Modules/Recording/Application/Strategies/QueryFragmentationDetector'
@@ -194,6 +195,14 @@ export function renderOptimizationReport(data: OptimizationReportData): string {
 
   if (data.fullScanFindings && data.fullScanFindings.length > 0) {
     sections.push(renderFullScanSection(data.fullScanFindings))
+  }
+
+  if (data.llmSuggestions && data.llmSuggestions.length > 0) {
+    sections.push(renderLlmSection(
+      data.llmSuggestions,
+      data.llmInterrupted ?? false,
+      data.llmTotal ?? data.llmSuggestions.length,
+    ))
   }
 
   sections.push(renderFooter(data.explainWarning))

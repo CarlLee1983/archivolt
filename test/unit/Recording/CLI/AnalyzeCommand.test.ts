@@ -93,3 +93,35 @@ describe('parseAnalyzeArgs — optimize-md flags', () => {
     expect(args.explainConcurrency).toBe(3)
   })
 })
+
+describe('parseAnalyzeArgs — llm flags', () => {
+  it('defaults llm to false', () => {
+    const args = parseAnalyzeArgs(['analyze', 'rec_123'])
+    expect(args.llm).toBe(false)
+  })
+
+  it('parses --llm flag', () => {
+    const args = parseAnalyzeArgs(['analyze', 'rec_123', '--llm'])
+    expect(args.llm).toBe(true)
+  })
+
+  it('defaults topN to 5', () => {
+    const args = parseAnalyzeArgs(['analyze', 'rec_123'])
+    expect(args.topN).toBe(5)
+  })
+
+  it('parses --top-n value', () => {
+    const args = parseAnalyzeArgs(['analyze', 'rec_123', '--top-n', '10'])
+    expect(args.topN).toBe(10)
+  })
+
+  it('defaults llmSeparate to false', () => {
+    const args = parseAnalyzeArgs(['analyze', 'rec_123'])
+    expect(args.llmSeparate).toBe(false)
+  })
+
+  it('parses --llm-separate flag', () => {
+    const args = parseAnalyzeArgs(['analyze', 'rec_123', '--llm-separate'])
+    expect(args.llmSeparate).toBe(true)
+  })
+})
