@@ -5,7 +5,8 @@ Archivolt is a local ER visualization and annotation tool. It helps developers u
 - **Visual Database Explorer**: Built with [ReactFlow](https://reactflow.dev/) for an interactive and zoomable schema visualization.
 - **Virtual Foreign Keys (vFK)**: Annotate "implicit" relationships between tables without modifying the production database schema.
 - **Unified Analysis**: Built-in HTTP and TCP proxies to correlate API calls with SQL patterns.
-- **Log File Analysis**: Analyze MySQL general logs, slow query logs, or any canonical JSONL without a live proxy session. Use `--from general-log|slow-log|canonical <path>` to feed existing log files into the same optimization pipeline.
+- **Log File Analysis**: Analyze MySQL and PostgreSQL logs without a live proxy session. Use `--from general-log|slow-log|canonical|postgres-slow-log|postgres-csv-log <path>` to feed existing log files into the same optimization pipeline.
+- **Home Dashboard**: Browser-first control center with real-time proxy status (SSE), session management, step-by-step Wizard Drawer, and an in-browser Report Viewer for optimization reports.
 - **End-to-End Observation**: Detect N+1 queries, noise tables, and group database queries into logical flows.
 - **Multi-Format Exporters**: Eloquent, Prisma, DBML, and Mermaid support.
 
@@ -28,4 +29,4 @@ Archivolt is a local ER visualization and annotation tool. It helps developers u
 
 ## Version
 
-Currently v0.5.0 (April 2026)
+Currently v0.8.0 (April 2026)

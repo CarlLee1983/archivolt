@@ -27,7 +27,8 @@ src/
                          QueryEvent (canonical log input schema for --from flag)
       Application/
         Services/        RecordingService, ChunkAnalyzerService, UnifiedCorrelationService,
-                         ExplainAnalyzer (Layer 2b: EXPLAIN live analysis + MysqlExplainAdapter),
+                         ExplainAnalyzer (Layer 2b: EXPLAIN live analysis + MysqlExplainAdapter
+                                          + PostgresExplainAdapter),
                          IndexSuggestionService (merge DDL + EXPLAIN index recommendations),
                          LogImportService (parse log file → virtual RecordingSession)
         Strategies/      FlowGrouper, HttpFlowGrouper, NoiseTableDetector, RelationInferrer,
@@ -38,14 +39,19 @@ src/
                          DdlSchemaParser (Layer 2a: MySQL DDL regex parser),
                          IndexCoverageGapAnalyzer (Layer 2a: WHERE column vs DDL index diff)
       Infrastructure/
-        Proxy/           TcpProxy, HttpProxy, MysqlProtocolParser
+        Proxy/           TcpProxy, HttpProxy, MysqlProtocolParser, PostgresProtocolParser
+                         (auto-detects MySQL vs PostgreSQL on first packet)
         Parsers/         IQueryLogParser (streaming interface), CanonicalJsonlParser,
-                         MysqlGeneralLogParser, MysqlSlowQueryLogParser
+                         MysqlGeneralLogParser, MysqlSlowQueryLogParser,
+                         PostgresSlowQueryLogParser, PostgresCsvLogParser
         Persistence/     RecordingRepository (JSONL for queries, markers, and HTTP chunks)
         Renderers/       ManifestMarkdownRenderer,
-                         OptimizationReportRenderer (--format optimize-md Markdown output)
+                         OptimizationReportRenderer (--format optimize-md Markdown output),
+                         OptimizationReportJsonRenderer (JSON output for browser Report Viewer)
         Providers/       RecordingServiceProvider
-      Presentation/      RecordingController, Recording.routes.ts, AnalyzeCommand
+      Presentation/      RecordingController, StatusController (GET /api/status snapshot),
+                         Recording.routes.ts (incl. SSE /api/recording/live + /report/:id/:type),
+                         AnalyzeCommand
 
     Doctor/
       Domain/            IHealthCheck, IPrompter interfaces
@@ -75,28 +81,47 @@ src/
 
 ```
 web/src/
-  main.tsx               Entry point
-  App.tsx                Main app shell (Navbar, side panel, Canvas, Timeline)
+  main.tsx               Entry point — BrowserRouter + Routes
+  App.tsx                Root component (redirects / to /dashboard)
+
+  pages/
+    Dashboard.tsx        Home page: status, workflow progress, session list, Wizard trigger
+    CanvasPage.tsx       ER Canvas page (moved from App.tsx)
+    ReportViewer.tsx     Markdown optimization report rendered as expandable FindingCards
+    ReviewPage.tsx       VFK Review: Pending / Confirmed / Ignored sub-tabs
 
   components/
     Canvas/
       ERCanvas.tsx       ReactFlow wrapper (LOD level-of-detail toggles)
       TableNode.tsx      Table node visual component
-      edges.ts           Edge generation (FK + VFK)
+      edges.ts           Edge generation (FK + VFK, skips ignored vFKs)
       layoutEngine.ts    Dagre auto-layout
+      VFKDialog.tsx      Dialog for adding/editing Virtual Foreign Keys
+    Dashboard/
+      StatusSection.tsx  DB proxy + HTTP proxy status cards (SSE-driven)
+      WorkflowSection.tsx 5-step workflow progress tracker
+      SessionList.tsx    Session list with analyze / view report actions
     Timeline/
       TimelinePanel.tsx  Recording session timeline UI
       PlaybackControls.tsx  Playback controls (speed, play/pause)
       ChunkCard.tsx      Query chunk card component
+    Report/
+      FindingCard.tsx    Expandable finding card with copy-ready SQL
+    Review/
+      SuggestionRow.tsx  Single VFK suggestion row (confirm / ignore / restore)
+    Wizard/
+      WizardDrawer.tsx   5-step guided setup drawer (proxy config → schema → record → analyze)
 
   stores/
-    schemaStore.ts       Schema state (Zustand): filters, group visibility
+    schemaStore.ts       Schema state (Zustand): filters, group visibility, pendingVFKCount
     recordingStore.ts    Recording sessions, chunks, playback state
+    dashboardStore.ts    SSE connection, proxy status, live stats
     playbackUtils.ts     Playback timing helpers
 
   api/
     schema.ts            Schema REST API client
     recording.ts         Recording REST API client
+    dashboard.ts         Status / sessions / report REST + SSE client
 
   types/
     er-model.ts          ERModel TypeScript interfaces
@@ -128,10 +153,11 @@ Captures browser events (clicks, form submits, etc.) and sends them as **operati
    - `HttpProxy` (optional) intercepts API traffic → `onChunk` is fire-and-forget (returns response immediately) → `RecordingRepository.appendHttpChunks()` writes via WriteStream without blocking the client.
    - Chrome extension captures events → `RecordingRepository.appendMarkers()` writes via WriteStream.
    - `RecordingService.start()` calls `repo.openStreams()` to open WriteStreams; `stop()` calls `repo.closeStreams()` which awaits all stream.end() to guarantee data durability before marking the session stopped.
-4b. **Log File Import** (`--from` flag): `IQueryLogParser` implementations (`MysqlGeneralLogParser`, `MysqlSlowQueryLogParser`, `CanonicalJsonlParser`) stream-parse external log files line-by-line (O(1) memory). `LogImportService` converts each `QueryEvent` to a `CapturedQuery` using `analyzeQuery()` and writes it to a virtual `RecordingSession` via `RecordingRepository`. The resulting session ID is then passed to the standard analysis pipeline — no separate code path needed.
+4b. **Log File Import** (`--from` flag): `IQueryLogParser` implementations (`MysqlGeneralLogParser`, `MysqlSlowQueryLogParser`, `CanonicalJsonlParser`, `PostgresSlowQueryLogParser`, `PostgresCsvLogParser`) stream-parse external log files line-by-line (O(1) memory). `LogImportService` converts each `QueryEvent` to a `CapturedQuery` using `analyzeQuery()` and writes it to a virtual `RecordingSession` via `RecordingRepository`. The resulting session ID is then passed to the standard analysis pipeline — no separate code path needed.
 5. **Analysis**: `AnalyzeCommand` orchestrates `HttpFlowGrouper` and `UnifiedCorrelationService` to match API calls with DB patterns using a 500ms time window and SQL SHA256 hashing.
 6. **Reporting**: `ManifestMarkdownRenderer` generates a detailed report including bootstrap metadata, noise table filtering, and N+1 query detection. `OptimizationReportRenderer` generates the `--format optimize-md` report: per-table R/W ratios, N+1 findings with batch SQL, query fragmentation, DDL index gaps, and EXPLAIN-confirmed full table scans — each finding includes a runnable SQL snippet.
-7. User annotates vFK → SchemaController API → `JsonFileRepository` persists
+6b. **Dashboard SSE**: While a recording is active, `dashboardStore` subscribes to `GET /api/recording/live` (SSE). `StatusController` pushes live QPS, query counts, and proxy state every second via `getLiveStats()`. The Dashboard page renders these updates in real time without polling.
+7. User annotates vFK → SchemaController API → `JsonFileRepository` persists; `/review` page shows the three-state lifecycle (Pending / Confirmed / Ignored) computed from `schemaStore.pendingVFKCount`.
 8. CLI `export` → `ExportService` → `IExporter` → `IFileWriter`
 9. `doctor` command → `DoctorService` runs each `IHealthCheck` → report or interactive repair
 

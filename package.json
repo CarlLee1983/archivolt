@@ -1,6 +1,6 @@
 {
   "name": "archivolt",
-  "version": "0.4.0",
+  "version": "0.8.0",
   "description": "ER Model 視覺化標註工具 — 協助老舊專案建構資料關聯",
   "type": "module",
   "scripts": {

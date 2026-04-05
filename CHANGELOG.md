@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-04-05
+
+### Added
+- **PostgreSQL Log Analysis** (`--from postgres-slow-log|postgres-csv-log`): Feed PostgreSQL logs directly into the full analysis pipeline.
+  - `PostgresSlowQueryLogParser`: Parses PostgreSQL stderr logs (`log_min_duration_statement` output). Extracts `durationMs` and `rowsExamined` per entry.
+  - `PostgresCsvLogParser`: Parses PostgreSQL CSV logs (`log_destination=csvlog`, PG 14+). Reads `csv-parse` streams; each row maps to a `QueryEvent`.
+- **PostgreSQL EXPLAIN Adapter** (`PostgresExplainAdapter`): Layer 2b live EXPLAIN analysis for PostgreSQL databases. Detects sequential scans (`Seq Scan`) with estimated rows above `--min-rows`. Compatible with all `--explain-db` flags.
+- **Auto-Protocol Detection**: TCP proxy auto-detects MySQL vs PostgreSQL wire protocol on first packet, eliminating the need for a `--db-type` flag.
+
 ## [0.7.0] - 2026-04-05
 
 ### Added
@@ -40,6 +49,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.4.0] - 2026-04-04
 
 ### Added
+- **Home Dashboard** (`/`): Browser-first control center — opens automatically when `archivolt` starts. Real-time status section (DB proxy QPS, HTTP proxy state via SSE), 5-step workflow progress tracker, session list with quick-access actions.
+  - **Wizard Drawer**: Step-by-step guided setup for new users — configure proxy, load schema, start recording, run analysis — without remembering any CLI commands.
+  - **Report Viewer** (`/report/:sessionId`): Render the `--format optimize-md` report as structured cards in the browser. Each finding is expandable with copy-ready SQL snippets. Powered by `react-markdown`.
+  - **SSE Live Stats** (`GET /api/recording/live`): Server-Sent Events endpoint that pushes real-time QPS, query counts, and proxy state while a recording is active.
+  - **Status Snapshot** (`GET /api/status`): Single-call system health check returning proxy state, active session, and archivolt.json presence.
+  - **`OptimizationReportJsonRenderer`**: Writes the optimization report as `.json` alongside the Markdown file, powering the browser-side Report Viewer.
+  - React routing (`react-router-dom v7`): `/` Dashboard, `/canvas` ER Canvas, `/report/:sessionId` Report Viewer, `/review` VFK Review.
+- **VFK Review Page** (`/review`): Three-tab UI (Pending / Confirmed / Ignored) for reviewing auto-inferred Virtual Foreign Keys. Each suggestion row shows source/target columns and confidence score with one-click confirm or ignore.
+  - `confidence: 'ignored'` state: `ignoreSuggestion` now marks vFKs as ignored (reversible) rather than deleting them. `restoreIgnored` promotes an ignored suggestion back to pending.
+  - **Pending badge** in Canvas navbar: `schemaStore.pendingVFKCount` computed value drives a live count badge so you always know how many suggestions are waiting.
+- **Table Name Filter**: Search/filter tables by name in the ER Canvas — essential for schemas with 50+ tables.
 - **DB Performance Optimization Report** (`--format optimize-md`): A three-layer analysis pipeline that turns recorded sessions into actionable, runnable SQL recommendations.
   - **Layer 1 — Pattern Analysis (offline)**: N+1 query detection aggregated to API path level with batch `IN (...)` rewrite suggestions. Query fragmentation detection (≥3 identical queries per request) with `dataloader`/`batch`/`cache` recommendations. Read/write ratio analysis with Redis TTL and Read Replica suggestions.
   - **Layer 2a — DDL Schema Diff** (`--ddl <schema.sql>`): Parses MySQL `CREATE TABLE` DDL with regex (backtick identifiers, composite indexes, `AUTO_INCREMENT`, charset/collation). Cross-references N+1 and fragmentation findings against existing indexes to surface un-indexed `WHERE` columns. Generates `CREATE INDEX` statements marked as "unverified — test in staging first."
@@ -90,6 +110,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Interactive UI**: Basic React-based canvas for exploring table relationships.
 
 ---
+[0.8.0]: https://github.com/CarlLee1983/archivolt/compare/v0.7.0...v0.8.0
+[0.7.0]: https://github.com/CarlLee1983/archivolt/compare/v0.6.0...v0.7.0
+[0.6.0]: https://github.com/CarlLee1983/archivolt/compare/v0.5.0...v0.6.0
+[0.5.0]: https://github.com/CarlLee1983/archivolt/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/CarlLee1983/archivolt/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/CarlLee1983/archivolt/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/CarlLee1983/archivolt/compare/v0.1.0...v0.2.0

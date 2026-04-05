@@ -4,12 +4,12 @@ This document tracks the release versions and compatibility requirements for all
 
 ---
 
-## 🚀 Current Release: v0.7.0 (2026-04-05)
+## 🚀 Current Release: v0.8.0 (2026-04-05)
 
 | Component | Version | Description |
 |-----------|---------|-------------|
-| **Archivolt CLI / API** | `0.7.0` | Core logic, Recording Proxy, Semantic Analysis, Optimization Report, Log Import, AI Skills, LLM Layer 3. |
-| **Web Dashboard** | `0.6.0` | ReactFlow Canvas, VFK Review UX, Timeline Playback. |
+| **Archivolt CLI / API** | `0.8.0` | Core logic, Recording Proxy (MySQL + PostgreSQL), Semantic Analysis, Optimization Report, Log Import, AI Skills, LLM Layer 3. |
+| **Web Dashboard** | `0.7.0` | Home Dashboard, VFK Review UX, Report Viewer, ReactFlow Canvas, Timeline Playback. |
 | **Chrome Extension** | `1.0.0` | Browser event capture (navigate, submit, click, request). |
 
 ---
@@ -26,7 +26,9 @@ This document tracks the release versions and compatibility requirements for all
 
 ## 📅 Release History (Summary)
 
-- **v0.7.0** (Current):
+- **v0.8.0** (Current):
+  - ✨ Added **PostgreSQL Support** — `--from postgres-slow-log|postgres-csv-log`, `PostgresExplainAdapter` for Layer 2b, auto-detect protocol in TCP proxy.
+- **v0.7.0**:
   - ✨ Added **Layer 3 LLM Optimization** (`--llm`, `--top-n`, `--llm-separate`) — Claude Haiku recommendations for top DB bottlenecks.
 - **v0.6.0**:
   - ✨ Added **AI Skill Family** — `archivolt-schema`, `archivolt-record`, `archivolt-analyze`, `archivolt-advisor` for guided reverse-engineering and architecture recommendation.
@@ -34,6 +36,7 @@ This document tracks the release versions and compatibility requirements for all
 - **v0.5.0**:
   - ✨ Added **Log File Analysis** (`--from general-log|slow-log|canonical`).
 - **v0.4.0**:
+  - ✨ Added **Home Dashboard** — system status, workflow guide, session list, Wizard Drawer, Report Viewer, SSE live stats.
   - ✨ Added **VFK Review UX** (Pending/Confirmed/Ignored status).
   - ✨ Added **Table Name Filter** in ER Canvas.
   - ✅ Finalized **Optimization Report Pipeline** (Layer 1, 2a, 2b).

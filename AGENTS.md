@@ -71,6 +71,18 @@ When the user's request matches an available skill, ALWAYS invoke it using the `
 - **CLI**: `--llm` (enable), `--top-n <n>` (default 5), `--llm-separate` (write LLM section to `.llm.md`). AbortSignal + SIGINT handler ensures partial results are preserved on Ctrl+C.
 - **Integration**: LLM section appended to `--format optimize-md` report or written separately. `enabledLayers` includes `'llm'` when active.
 
+### 6. DX Dashboard (2026-04-04)
+- **Goal**: Give users a browser-first control center so they never need to remember CLI commands for the recording workflow.
+- **Design**: react-router-dom v7 adds three routes: `/` (Dashboard), `/canvas` (ER Canvas), `/report/:sessionId` (Report Viewer), `/review` (VFK Review). The Dashboard has a Status section driven by SSE (`/api/recording/live`) and a Wizard Drawer that walks through all 5 workflow steps.
+- **SSE Pattern**: `StatusController.liveStats()` pushes incremental stats every second while a session is active. The frontend `dashboardStore` manages the EventSource lifecycle and exposes reactive state to Dashboard components.
+- **Report Viewer**: `AnalyzeCommand` writes a `.json` file alongside the Markdown report (via `OptimizationReportJsonRenderer`). `/report/:sessionId/:type` serves this JSON; the browser renders it as expandable `FindingCard` components with copy-ready SQL.
+- **CLI behavior**: `archivolt` (no args) auto-opens the browser to `http://localhost:3100` after server start (cross-platform via `Bun.spawn` + `process.platform`).
+
+### 7. PostgreSQL Support (2026-04-05)
+- **Goal**: Extend all Archivolt analysis layers to support PostgreSQL in addition to MySQL — covering log file import, live EXPLAIN, and TCP proxy recording.
+- **Design**: `IQueryLogParser` extended with `PostgresSlowQueryLogParser` (stderr format) and `PostgresCsvLogParser` (csvlog format, uses `csv-parse`). `ExplainAnalyzer` dispatches to `PostgresExplainAdapter` when the DSN is a PostgreSQL URL — detects `Seq Scan` nodes (vs MySQL's `type=ALL`). TCP proxy auto-detects protocol on the first packet via `PostgresProtocolParser`.
+- **CLI**: `--from postgres-slow-log|postgres-csv-log` added to `AnalyzeCommand`. All existing compose flags (`--ddl`, `--explain-db`, `--llm`) work unchanged.
+
 ### 4. AI Skill Family (2026-04-05)
 - **Goal**: Turn Archivolt's reverse-engineering output into actionable architecture recommendations for legacy project refactoring.
 - **Design**: Four independent Claude Code skills (`archivolt-schema`, `archivolt-record`, `archivolt-analyze`, `archivolt-advisor`) in `skills/`. Each has a single responsibility and can be invoked independently. `archivolt-advisor` reads accumulated artifacts and produces a Markdown architecture recommendation report.
