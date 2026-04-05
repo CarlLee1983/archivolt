@@ -90,8 +90,7 @@ export function fromGravitoContext(ctx: GravitoContext): IHttpContext {
 		return JSON.parse(await req.text()) as T
 	}
 
-	const ctxParams = ((ctx as unknown as { params?: Record<string, string | undefined> })
-		.params ?? {}) as Record<string, string | undefined>
+	const ctxParams = (ctx.req.params?.() ?? {}) as Record<string, string | undefined>
 
 	return {
 		getBodyText: () => ctx.req.text(),
