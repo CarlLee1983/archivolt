@@ -1,5 +1,7 @@
 # AGENTS.md
 
+> **Agent Startup Rule**: 在執行任何 Directive 之前，請先檢查 `CONTRADICTIONS.md` 中的指令優先順序與已知衝突，確保決策不違反項目約定。
+
 Archivolt — Reverse-engineering tool for legacy projects: analyze and understand the database before refactoring. Includes ER visualization and annotation (Virtual Foreign Keys), DB proxy query capture, query playback analysis, and more.
 
 ## Quick Reference
@@ -9,6 +11,19 @@ Archivolt — Reverse-engineering tool for legacy projects: analyze and understa
 | `bun run dev:all` | Start backend API :3100 + frontend :5173 |
 | `bun run check` | typecheck + lint + test |
 | `bun run test` | Vitest unit tests |
+
+## Documentation Update Policy
+
+**每個功能完成後，必須執行以下文件更新步驟：**
+
+1. **`CHANGELOG.md`** — 新增版本條目，描述新功能（用使用者視角撰寫，不是 commit log）
+2. **`VERSION.md`** — 更新版本號與 Release History
+3. **`README.md`** — 更新 Features 列表與 Project Structure（如有新目錄/指令）
+4. **`docs/commands.md`** — 新增任何新 CLI 指令
+5. **`AGENTS.md`** — 在 Core Architectural Decisions 新增本次決策紀錄
+6. **`TODOS.md`** — 將已完成的 TODO 移至 Completed 區塊
+
+可直接呼叫 `/document-release` skill 自動執行上述步驟。
 
 ## Language Policy
 
