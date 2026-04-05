@@ -64,6 +64,8 @@ If the developer answers (d), ask them to provide a command table in the same fo
 
 ## Step 3 — Load playbooks
 
+> **Install path:** If you installed with `archivolt install-skill` (Claude Code), playbooks are at `~/.claude/plugins/archivolt/skills/playbooks/`. If installed with `--cursor`, use `.cursor/rules/playbooks/`. If installed with `--codex`, playbooks are embedded in the combined system prompt and already available in context.
+
 Use the Read tool to load:
 
 1. `~/.claude/plugins/archivolt/skills/playbooks/<arch-slug>.md`
@@ -155,6 +157,7 @@ After all phases are complete (or skipped), write `SCAFFOLD.md` in the current d
 | `{{Model}}` | `schema.sql` table names (singular, PascalCase) |
 | `{{method}}` | HTTP recording HTTP method (GET/POST/PUT/DELETE) |
 | `{{path}}` | HTTP recording URL path |
+| `{{module}}` | Lowercase/kebab-case form of `{{Module}}` (e.g., `order-management` for filesystem paths, `ordermodule` for Python modules) |
 | `{{Module}}` | VFK cluster name from `archivolt.json` |
 | `{{Repository}}` | `{{Model}}Repository` |
 | `{{Service}}` | `{{Model}}Service` or cluster-level name |

@@ -1,7 +1,7 @@
 # Python + Django — Command Table
 
 Maps playbook action keys to Django management commands and file creation steps.
-Assumes Django REST Framework. Variables use {{PascalCase}} for class names.
+Assumes Django REST Framework. Class name variables use PascalCase (e.g., `{{Controller}}`). Path variables use snake_case (e.g., `{{module}}`).
 
 ## create-modules
 command: python manage.py startapp {{module}}
