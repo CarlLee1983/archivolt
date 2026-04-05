@@ -47,13 +47,13 @@ interface QueryEvent {
 New adapter layer under `src/Modules/Recording/Infrastructure/Parsers/`:
 
 ```
-IQueryLogParser.ts          // interface: parse(filePath) → QueryEvent[]
+IQueryLogParser.ts          // interface: stream-based, emits QueryEvent per line
 MysqlGeneralLogParser.ts    // parses MySQL general log
 MysqlSlowQueryLogParser.ts  // parses MySQL slow query log
 CanonicalJsonlParser.ts     // reads canonical JSONL directly (pass-through)
 ```
 
-Each parser converts its format to `QueryEvent[]`, which is then written as a virtual recording session (JSONL) and fed into the existing `AnalyzeCommand` pipeline. No analysis logic changes.
+**Large file handling (critical):** Parsers must use streaming line-by-line reads (`readline` / `Bun.file().stream()`), never loading the full file into memory. Each parsed `QueryEvent` is written to the output JSONL incrementally via `RecordingRepository`'s existing `WriteStream` pattern. This keeps memory usage O(1) regardless of file size.
 
 ## CLI Syntax
 
