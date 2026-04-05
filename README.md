@@ -9,7 +9,7 @@ In many legacy systems, databases have numerous "implicit relationships"—colum
 ## ✨ Features
 
 - **Visual Database Explorer**: Built with [ReactFlow](https://reactflow.dev/) for an interactive and zoomable schema visualization.
-- **Virtual Foreign Keys (vFK)**: Annotate "implicit" relationships between tables without modifying the production database schema.
+- **Virtual Foreign Keys (vFK)**: Annotate "implicit" relationships between tables without modifying the production database schema. **VFK Review UX** provides a dedicated interface to review, confirm, or ignore auto-detected relationship suggestions with real-time status badges.
 - **Intelligent Table Grouping**: Automatically groups tables using existing foreign keys, column naming patterns (e.g., `_id` suffixes), and table prefixes to make large schemas manageable.
 - **Multi-Format Exporters**:
   - **Eloquent (PHP)**: Generates Laravel Models with `$fillable`, `$casts`, and relationship methods (`belongsTo`, `hasMany`, etc.).
@@ -18,7 +18,8 @@ In many legacy systems, databases have numerous "implicit relationships"—colum
   - **Mermaid**: Generates ER diagram syntax for embedding in Markdown documentation.
 - **Query Recording & Chunking**: Run a TCP proxy to capture live database queries. Automatically groups queries into logical "flows" using a navigate-boundary strategy with automatic noise table detection.
 - **HTTP Proxy & API Correlation**: Built-in HTTP reverse proxy to capture API traffic. Automatically correlates HTTP requests with database queries within a 500ms time window to detect N+1 query patterns and build end-to-end operation models.
-- **DB Performance Optimization Report** (`--format optimize-md`): Three-layer analysis pipeline. Layer 1 runs offline from recorded sessions: per-table read/write ratios with Redis/Read Replica recommendations, N+1 query detection aggregated to API path level, and query fragmentation detection. Layer 2a adds DDL schema diff to detect un-indexed WHERE columns (`--ddl`). Layer 2b connects to a live database to confirm full table scans via EXPLAIN (`--explain-db`). Every finding includes a runnable SQL snippet — `CREATE INDEX`, batch query rewrite, or cache comment — ready to copy-paste.
+- **Performance Optimization Report** (`--format optimize-md`): Complete three-layer analysis pipeline. Layer 1 runs offline from recorded sessions: per-table read/write ratios with Redis/Read Replica recommendations, N+1 query detection aggregated to API path level, and query fragmentation detection. Layer 2a adds DDL schema diff to detect un-indexed WHERE columns (`--ddl`). Layer 2b connects to a live database to confirm full table scans via EXPLAIN (`--explain-db`). Every finding includes a runnable SQL snippet — `CREATE INDEX`, batch query rewrite, or cache comment — ready to copy-paste.
+- **Log File Analysis** (`--from`): Analyze existing MySQL general logs, slow query logs, or canonical JSONL files without running a proxy session. Download a log from a production host, run `archivolt analyze --from slow-log /path/to/slow.log --format optimize-md`, and get the same optimization report you'd get from a live recording.
 - **Chrome Extension Integration**: Capture browser events (clicks, fetch, navigation) to sync with database and HTTP recording for full-stack observability.
 - **Archivolt Doctor**: Built-in diagnostic tool to verify environment health, dependencies, and data integrity with interactive auto-fix suggestions.
 - **Powerful CLI**: Export your annotated schema directly to files or integrate with Laravel projects via Artisan.
@@ -97,6 +98,18 @@ In many legacy systems, databases have numerous "implicit relationships"—colum
      --explain-db mysql://user:pass@localhost:3306/mydb
    ```
 
+   Or skip the proxy entirely and analyze an existing log file:
+   ```bash
+   # MySQL slow query log (has execution time — best signal quality)
+   bun run dev analyze --from slow-log /path/to/slow.log --format optimize-md
+
+   # MySQL general log
+   bun run dev analyze --from general-log /path/to/mysql-general.log
+
+   # Canonical JSONL (any tool that produces { timestamp, sql } lines)
+   bun run dev analyze --from canonical /path/to/queries.jsonl
+   ```
+
 4. **Exporting via CLI**:
    ```bash
    # Export to Laravel Eloquent models
@@ -110,11 +123,10 @@ In many legacy systems, databases have numerous "implicit relationships"—colum
 
 ## 🗺️ Project Structure
 
-- `src/Modules/Schema`: Core business logic (DDD-first structure).
-  - `Domain`: ER Model entities and grouping strategies.
-  - `Application`: Services for importing, managing vFKs, and exporting.
-  - `Infrastructure`: JSON persistence, Exporters (Eloquent, Prisma, etc.), and File Writers.
-- `web/`: React + ReactFlow frontend application.
+- `src/Modules/Schema`: Core business logic for ER modeling and vFK management (DDD-first structure).
+- `src/Modules/Recording`: TCP/HTTP proxy infrastructure, query chunking, and session analysis.
+- `src/Modules/Doctor`: Environment diagnostics, dependency verification, and auto-fix logic.
+- `web/`: React + ReactFlow frontend application with interactive vFK Review dashboard.
 - `extension/`: Chrome extension for browser event capturing.
 - `archivolt.json`: The local data store for your annotations.
 

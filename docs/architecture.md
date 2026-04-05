@@ -23,11 +23,13 @@ src/
       Presentation/      SchemaController, Schema.routes.ts
 
     Recording/
-      Domain/            Session, OperationMarker, ProtocolParser, HttpChunk, ApiCallFlow
+      Domain/            Session, OperationMarker, ProtocolParser, HttpChunk, ApiCallFlow,
+                         QueryEvent (canonical log input schema for --from flag)
       Application/
         Services/        RecordingService, ChunkAnalyzerService, UnifiedCorrelationService,
                          ExplainAnalyzer (Layer 2b: EXPLAIN live analysis + MysqlExplainAdapter),
-                         IndexSuggestionService (merge DDL + EXPLAIN index recommendations)
+                         IndexSuggestionService (merge DDL + EXPLAIN index recommendations),
+                         LogImportService (parse log file → virtual RecordingSession)
         Strategies/      FlowGrouper, HttpFlowGrouper, NoiseTableDetector, RelationInferrer,
                          SqlSemanticInferrer,
                          ReadWriteRatioAnalyzer (Layer 1: R/W ratio + cache suggestions),
@@ -37,6 +39,8 @@ src/
                          IndexCoverageGapAnalyzer (Layer 2a: WHERE column vs DDL index diff)
       Infrastructure/
         Proxy/           TcpProxy, HttpProxy, MysqlProtocolParser
+        Parsers/         IQueryLogParser (streaming interface), CanonicalJsonlParser,
+                         MysqlGeneralLogParser, MysqlSlowQueryLogParser
         Persistence/     RecordingRepository (JSONL for queries, markers, and HTTP chunks)
         Renderers/       ManifestMarkdownRenderer,
                          OptimizationReportRenderer (--format optimize-md Markdown output)
@@ -124,6 +128,7 @@ Captures browser events (clicks, form submits, etc.) and sends them as **operati
    - `HttpProxy` (optional) intercepts API traffic → `onChunk` is fire-and-forget (returns response immediately) → `RecordingRepository.appendHttpChunks()` writes via WriteStream without blocking the client.
    - Chrome extension captures events → `RecordingRepository.appendMarkers()` writes via WriteStream.
    - `RecordingService.start()` calls `repo.openStreams()` to open WriteStreams; `stop()` calls `repo.closeStreams()` which awaits all stream.end() to guarantee data durability before marking the session stopped.
+4b. **Log File Import** (`--from` flag): `IQueryLogParser` implementations (`MysqlGeneralLogParser`, `MysqlSlowQueryLogParser`, `CanonicalJsonlParser`) stream-parse external log files line-by-line (O(1) memory). `LogImportService` converts each `QueryEvent` to a `CapturedQuery` using `analyzeQuery()` and writes it to a virtual `RecordingSession` via `RecordingRepository`. The resulting session ID is then passed to the standard analysis pipeline — no separate code path needed.
 5. **Analysis**: `AnalyzeCommand` orchestrates `HttpFlowGrouper` and `UnifiedCorrelationService` to match API calls with DB patterns using a 500ms time window and SQL SHA256 hashing.
 6. **Reporting**: `ManifestMarkdownRenderer` generates a detailed report including bootstrap metadata, noise table filtering, and N+1 query detection. `OptimizationReportRenderer` generates the `--format optimize-md` report: per-table R/W ratios, N+1 findings with batch SQL, query fragmentation, DDL index gaps, and EXPLAIN-confirmed full table scans — each finding includes a runnable SQL snippet.
 7. User annotates vFK → SchemaController API → `JsonFileRepository` persists

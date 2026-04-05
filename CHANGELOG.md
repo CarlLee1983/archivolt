@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-04-05
+
+### Added
+- **Log File Analysis** (`--from` flag): Analyze MySQL general logs, slow query logs, or canonical JSONL files without running a proxy session. `archivolt analyze --from general-log|slow-log|canonical <path>` creates a virtual recording session from the log file and passes it through the full analysis pipeline — every existing flag (`--format optimize-md`, `--ddl`, `--explain-db`, `--stdout`, `--output`) works unchanged.
+  - `MysqlGeneralLogParser`: Parses MySQL general log format. Supports both ISO 8601 (`2024-04-05T10:00:00.000000Z`) and compact (`240405 10:00:00`) timestamp formats. Skips non-Query events (Connect, Quit, Init DB). Guards against invalid timestamps.
+  - `MysqlSlowQueryLogParser`: Parses MySQL slow query log format. Extracts `durationMs` (Query_time × 1000) and `rowsExamined` per entry. Handles multi-line SQL and optional `use db;` statements for database context.
+  - `CanonicalJsonlParser`: Reads JSONL where each line is a `{ timestamp, sql, connectionId?, durationMs?, rowsExamined? }` object — a stable target format for any custom log collector. Skips malformed lines and entries with missing required fields.
+  - All parsers stream line-by-line (O(1) memory) — safe to use on multi-GB production logs.
+- **`QueryEvent` type**: Canonical input schema shared by all log parsers. Defines the contract for external tools targeting Archivolt.
+- **`LogImportService`**: Orchestrates parse → virtual session creation. Uses `analyzeQuery()` for SQL operation and table inference. Guarantees stream cleanup via `try-finally`.
+
 ## [0.4.0] - 2026-04-04
 
 ### Added

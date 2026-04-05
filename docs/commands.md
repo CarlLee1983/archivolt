@@ -33,6 +33,13 @@ bun run dev analyze <session-id> --stdout          # Print JSON manifest to cons
 bun run dev analyze <session-id> --format json     # Write JSON manifest to file
 bun run dev analyze <session-id> --format md       # Write Markdown manifest to file (default)
 
+# Analyze from log file (no proxy recording needed)
+bun run dev analyze --from general-log /path/to/mysql-general.log
+bun run dev analyze --from slow-log /path/to/slow.log
+bun run dev analyze --from canonical /path/to/queries.jsonl
+  # --from creates a virtual session from the log file and runs the full analysis pipeline.
+  # Supports all existing flags (--format optimize-md, --ddl, --explain-db, --output, --stdout)
+
 # DB Performance Optimization Report (--format optimize-md)
 bun run dev analyze <session-id> --format optimize-md
   # Layer 1 only (offline pattern analysis):
