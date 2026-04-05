@@ -91,7 +91,8 @@ export function parseAnalyzeArgs(argv: string[]): AnalyzeArgs {
   const llm = rest.includes('--llm')
 
   const topNIdx = rest.indexOf('--top-n')
-  const topN = topNIdx !== -1 ? Number(rest[topNIdx + 1]) : 5
+  const topNRaw = topNIdx !== -1 ? Number(rest[topNIdx + 1]) : 5
+  const topN = Number.isFinite(topNRaw) && topNRaw > 0 ? topNRaw : 5
 
   const llmSeparate = rest.includes('--llm-separate')
 

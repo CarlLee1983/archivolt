@@ -30,6 +30,8 @@ export function extractTopN(
   const sortedN1 = [...n1Findings].sort((a, b) => b.occurrences - a.occurrences)
   const sortedFragmentation = [...fragmentationFindings].sort((a, b) => b.callsPerRequest - a.callsPerRequest)
 
+  // Redistribute unused slots forward (full-scan → n1 → fragmentation) but not backward.
+  // If only full-scans exist with topN=5, you get ceil(5/3)=2 results, not 5.
   const fsCount = Math.min(slotSize, sortedFullScans.length)
   const n1Count = Math.min(slotSize + (slotSize - fsCount), sortedN1.length)
   const fragCount = Math.min(slotSize + (slotSize - fsCount) + (slotSize - n1Count), sortedFragmentation.length)
