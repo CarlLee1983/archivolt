@@ -1,0 +1,3 @@
+{"timestamp":1712300000000,"sql":"SELECT * FROM users WHERE id = 1","connectionId":"42"}
+{"timestamp":1712300000010,"sql":"SELECT * FROM orders WHERE user_id = 1","connectionId":"42","durationMs":5,"rowsExamined":100}
+{"timestamp":1712300000020,"sql":"INSERT INTO logs (msg) VALUES ('ok')","connectionId":"43"}

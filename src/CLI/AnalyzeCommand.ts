@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { mkdirSync, existsSync } from 'node:fs'
 import { writeFile, readFile } from 'node:fs/promises'
+import type { ImportFormat } from '@/Modules/Recording/Application/Services/LogImportService'
 import { RecordingRepository } from '@/Modules/Recording/Infrastructure/Persistence/RecordingRepository'
 import { ChunkAnalyzerService } from '@/Modules/Recording/Application/Services/ChunkAnalyzerService'
 import { renderManifest } from '@/Modules/Recording/Infrastructure/Renderers/ManifestMarkdownRenderer'
@@ -19,7 +20,9 @@ import { runExplainAnalysis, MysqlExplainAdapter } from '@/Modules/Recording/App
 import type { FullScanFinding } from '@/Modules/Recording/Application/Services/ExplainAnalyzer'
 
 export interface AnalyzeArgs {
-  readonly sessionId: string
+  readonly sessionId?: string        // undefined when --from is used
+  readonly fromFormat?: ImportFormat // set when --from is used
+  readonly fromPath?: string         // set when --from is used
   readonly output?: string
   readonly format: 'md' | 'json' | 'optimize-md'
   readonly stdout: boolean
@@ -34,9 +37,31 @@ export function parseAnalyzeArgs(argv: string[]): AnalyzeArgs {
   const analyzeIdx = argv.indexOf('analyze')
   const rest = argv.slice(analyzeIdx + 1)
 
-  const sessionId = rest[0]
-  if (!sessionId || sessionId.startsWith('--')) {
-    throw new Error('Usage: archivolt analyze <session-id> [--output path] [--format md|json|optimize-md] [--stdout] [--ddl path] [--explain-db url] [--min-rows n] [--llm]')
+  const fromIdx = rest.indexOf('--from')
+  let sessionId: string | undefined
+  let fromFormat: ImportFormat | undefined
+  let fromPath: string | undefined
+
+  if (fromIdx !== -1) {
+    fromFormat = rest[fromIdx + 1] as ImportFormat
+    fromPath = rest[fromIdx + 2]
+    if (!fromFormat || !fromPath) {
+      throw new Error('Usage: archivolt analyze --from <general-log|slow-log|canonical> <file-path>')
+    }
+    const VALID_FORMATS = ['canonical', 'general-log', 'slow-log'] as const
+    if (!VALID_FORMATS.includes(fromFormat as typeof VALID_FORMATS[number])) {
+      throw new Error(
+        `Unknown format "${fromFormat}". Valid options: ${VALID_FORMATS.join(', ')}`
+      )
+    }
+  } else {
+    sessionId = rest[0]
+    if (!sessionId || sessionId.startsWith('--')) {
+      throw new Error(
+        'Usage: archivolt analyze <session-id> [--format md|json|optimize-md] [--stdout]\n' +
+        '   or: archivolt analyze --from <general-log|slow-log|canonical> <file-path>'
+      )
+    }
   }
 
   const formatIdx = rest.indexOf('--format')
@@ -66,7 +91,7 @@ export function parseAnalyzeArgs(argv: string[]): AnalyzeArgs {
   const concurrencyIdx = rest.indexOf('--explain-concurrency')
   const explainConcurrency = concurrencyIdx !== -1 ? Number(rest[concurrencyIdx + 1]) : 5
 
-  return { sessionId, output, format, stdout, ddlPath, explainDbUrl, llm, minRows, explainConcurrency }
+  return { sessionId, fromFormat, fromPath, output, format, stdout, ddlPath, explainDbUrl, llm, minRows, explainConcurrency }
 }
 
 export async function runAnalyzeCommand(argv: string[]): Promise<void> {
@@ -76,20 +101,35 @@ export async function runAnalyzeCommand(argv: string[]): Promise<void> {
     process.env.ARCHIVOLT_RECORDINGS_DIR ?? path.resolve(process.cwd(), 'data/recordings')
   const repo = new RecordingRepository(recordingsDir)
 
-  const session = await repo.loadSession(args.sessionId)
-  if (!session) {
-    console.error(`Session not found: ${args.sessionId}`)
+  // --from: import log file into a virtual session first
+  let sessionId = args.sessionId
+  if (args.fromFormat && args.fromPath) {
+    console.log(`Importing ${args.fromFormat} from: ${args.fromPath}`)
+    const { LogImportService } = await import('@/Modules/Recording/Application/Services/LogImportService')
+    const importSvc = new LogImportService(repo)
+    sessionId = await importSvc.import(args.fromPath, args.fromFormat)
+    console.log(`Created virtual session: ${sessionId}`)
+  }
+
+  if (!sessionId) {
+    console.error('No session ID resolved.')
     process.exit(1)
   }
 
-  const queries = await repo.loadQueries(args.sessionId)
-  const markers = await repo.loadMarkers(args.sessionId)
+  const session = await repo.loadSession(sessionId)
+  if (!session) {
+    console.error(`Session not found: ${sessionId}`)
+    process.exit(1)
+  }
+
+  const queries = await repo.loadQueries(sessionId)
+  const markers = await repo.loadMarkers(sessionId)
 
   const analyzer = new ChunkAnalyzerService()
   const manifest = analyzer.analyze(session, queries, markers)
 
   // HTTP proxy データ（なければスキップ）
-  const httpChunks = await repo.loadHttpChunks(args.sessionId)
+  const httpChunks = await repo.loadHttpChunks(sessionId)
   const apiFlows = httpChunks.length > 0
     ? correlate(pairHttpChunks(httpChunks), queries)
     : undefined
@@ -101,7 +141,7 @@ export async function runAnalyzeCommand(argv: string[]): Promise<void> {
       console.log(json)
       return
     }
-    const outPath = args.output ?? path.resolve(process.cwd(), `data/analysis/${args.sessionId}/manifest.json`)
+    const outPath = args.output ?? path.resolve(process.cwd(), `data/analysis/${sessionId}/manifest.json`)
     const dir = path.dirname(outPath)
     if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
     await writeFile(outPath, json, 'utf-8')
@@ -153,7 +193,7 @@ export async function runAnalyzeCommand(argv: string[]): Promise<void> {
     }
 
     const reportData: OptimizationReportData = {
-      sessionId: args.sessionId,
+      sessionId: sessionId,
       generatedAt: new Date().toISOString(),
       enabledLayers,
       readWriteReport,
@@ -171,7 +211,7 @@ export async function runAnalyzeCommand(argv: string[]): Promise<void> {
       return
     }
 
-    const outPath = args.output ?? path.resolve(process.cwd(), `data/analysis/${args.sessionId}/optimization-report.md`)
+    const outPath = args.output ?? path.resolve(process.cwd(), `data/analysis/${sessionId}/optimization-report.md`)
     const dir = path.dirname(outPath)
     if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
     await writeFile(outPath, md, 'utf-8')
@@ -182,7 +222,7 @@ export async function runAnalyzeCommand(argv: string[]): Promise<void> {
   }
 
   const md = renderManifest(manifest, apiFlows)
-  const outPath = args.output ?? path.resolve(process.cwd(), `data/analysis/${args.sessionId}/manifest.md`)
+  const outPath = args.output ?? path.resolve(process.cwd(), `data/analysis/${sessionId}/manifest.md`)
   const dir = path.dirname(outPath)
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
   await writeFile(outPath, md, 'utf-8')
