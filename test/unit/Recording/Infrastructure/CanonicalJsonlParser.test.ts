@@ -60,4 +60,25 @@ describe('CanonicalJsonlParser', () => {
       await unlink(tmpPath)
     }
   })
+
+  it('skips lines with missing required fields', async () => {
+    const tmpPath = `${os.tmpdir()}/archivolt-test-fields-${Date.now()}.jsonl`
+    await writeFile(tmpPath, [
+      '{"timestamp":1000,"sql":"SELECT 1"}',
+      '{"sql":"SELECT 2"}',
+      '{"timestamp":2000}',
+      '{}',
+      '{"timestamp":3000,"sql":"SELECT 3"}',
+    ].join('\n'))
+
+    try {
+      const parser = new CanonicalJsonlParser()
+      const events = await collect(parser.parse(tmpPath))
+      expect(events).toHaveLength(2)
+      expect((events[0] as { sql: string }).sql).toBe('SELECT 1')
+      expect((events[1] as { sql: string }).sql).toBe('SELECT 3')
+    } finally {
+      await unlink(tmpPath)
+    }
+  })
 })

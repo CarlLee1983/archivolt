@@ -48,6 +48,12 @@ export function parseAnalyzeArgs(argv: string[]): AnalyzeArgs {
     if (!fromFormat || !fromPath) {
       throw new Error('Usage: archivolt analyze --from <general-log|slow-log|canonical> <file-path>')
     }
+    const VALID_FORMATS = ['canonical', 'general-log', 'slow-log'] as const
+    if (!VALID_FORMATS.includes(fromFormat as typeof VALID_FORMATS[number])) {
+      throw new Error(
+        `Unknown format "${fromFormat}". Valid options: ${VALID_FORMATS.join(', ')}`
+      )
+    }
   } else {
     sessionId = rest[0]
     if (!sessionId || sessionId.startsWith('--')) {

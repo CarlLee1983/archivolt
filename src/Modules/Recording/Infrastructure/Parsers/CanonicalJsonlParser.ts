@@ -13,7 +13,9 @@ export class CanonicalJsonlParser implements IQueryLogParser {
       const trimmed = line.trim()
       if (!trimmed) continue
       try {
-        yield JSON.parse(trimmed) as QueryEvent
+        const obj = JSON.parse(trimmed) as Partial<QueryEvent>
+        if (typeof obj.timestamp !== 'number' || typeof obj.sql !== 'string' || !obj.sql) continue
+        yield obj as QueryEvent
       } catch {
         // Skip malformed lines silently — log files may contain partial writes or corruption
       }

@@ -39,4 +39,10 @@ describe('parseAnalyzeArgs --from flag', () => {
   it('throws when neither session-id nor --from is provided', () => {
     expect(() => parseAnalyzeArgs(['analyze', '--format', 'md'])).toThrow()
   })
+
+  it('throws when --from format is invalid', () => {
+    expect(() =>
+      parseAnalyzeArgs(['analyze', '--from', 'typo', '/tmp/file.log'])
+    ).toThrow(/Unknown format/)
+  })
 })
