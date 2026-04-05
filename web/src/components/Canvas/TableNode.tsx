@@ -79,7 +79,7 @@ function TableNodeComponent({ data, selected }: NodeProps) {
                     {col.name}
                   </span>
                 </div>
-                <span className="text-text-muted text-[9px] font-bold uppercase tracking-tighter opacity-40 group-hover/col:opacity-80">{col.type.replace(/\(.*\)/, '')}</span>
+                <span className="text-text-muted text-[9px] font-black uppercase tracking-tighter opacity-50 group-hover/col:opacity-90">{col.type.replace(/\(.*\)/, '')}</span>
               </div>
             ))}
             {table.columns.length > 12 && (

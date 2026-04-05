@@ -29,7 +29,7 @@ const zoomSelector = (state: any) => state.transform[2]
 
 function ERCanvasInner() {
   const { 
-    model, visibleGroups, tableFilter, selectTable, refreshModel, selectedTable, focusMode 
+    model, visibleGroups, tableFilter, tableNameFilter, selectTable, refreshModel, selectedTable, focusMode 
   } = useSchemaStore()
   const { setCenter, fitBounds } = useReactFlow()
   const zoom = useStore(zoomSelector)
@@ -41,6 +41,7 @@ function ERCanvasInner() {
   const autoFocus = useRecordingStore((s) => s.autoFocus)
 
   const keyword = tableFilter.trim().toLowerCase()
+  const nameKeyword = tableNameFilter.trim().toLowerCase()
 
   // LOD: Hide columns when zoom < 0.5
   const isLowDetail = zoom < 0.5
@@ -59,6 +60,10 @@ function ERCanvasInner() {
       if (visibleGroups.has(groupId)) {
         for (const t of group.tables) {
           if (neighborSet && !neighborSet.has(t)) continue // Filter by focus
+          
+          // Apply Table Name Filter
+          if (nameKeyword && !t.toLowerCase().includes(nameKeyword)) continue
+
           if (tableMatchesFilter(t, keyword, model.tables)) {
             visible.add(t)
           }
@@ -67,7 +72,7 @@ function ERCanvasInner() {
     }
     // Ensure we only include tables that actually exist in the model
     return Array.from(visible).filter(t => !!model.tables[t])
-  }, [model, visibleGroups, keyword, selectedTable, focusMode])
+  }, [model, visibleGroups, keyword, nameKeyword, selectedTable, focusMode])
 
   const { layoutNodes, layoutEdges } = useMemo(() => {
     if (!model || visibleTables.length === 0) return { layoutNodes: [], layoutEdges: [] }
