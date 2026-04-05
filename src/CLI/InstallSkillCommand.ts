@@ -132,6 +132,5 @@ export async function runInstallSkillCommand(argv: string[]): Promise<void> {
 
   if (format === 'codex') {
     await copySkillsToDir(skillsDir, process.cwd(), format)
-    console.log("Prepend this file's content to your Codex or ChatGPT system prompt.")
   }
 }
