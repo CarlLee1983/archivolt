@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-04-05
+
+### Added
+- **AI Skill Family** (`archivolt install-skill`): Four Claude Code skills for guided legacy database reverse-engineering and architecture advisory.
+  - `archivolt-schema`: Walks you through `archivolt doctor`, DDL schema collection, and VFK review — the one-time setup for a new legacy project.
+  - `archivolt-record`: Guides recording via Chrome extension (full UI semantic markers, ★★★★★) or TCP proxy fallback (★★★). Builds the extension automatically; only the "Load unpacked" step requires a human click.
+  - `archivolt-analyze`: Runs the Layer 1+2 optimization pipeline and ER export on a completed session.
+  - `archivolt-advisor`: Reads collected artifacts, asks 4 questions (team size, codebase state, domain count, traffic scale), cross-references Archivolt signals (N+1 density, read/write ratio, VFK clusters, query chunk labels), and outputs a Markdown architecture recommendation report — Slim MVC through Microservices, with reasoning grounded in your actual data.
+- **`install-skill` CLI command**: Copy skills to `~/.claude/plugins/archivolt/skills/` (Claude Code), `.cursor/rules/` (Cursor), or a combined system prompt file (Codex/ChatGPT) with `--cursor` / `--codex` flags.
+
 ## [0.5.0] - 2026-04-05
 
 ### Added

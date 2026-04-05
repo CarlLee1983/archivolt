@@ -4,12 +4,12 @@ This document tracks the release versions and compatibility requirements for all
 
 ---
 
-## 🚀 Current Release: v0.4.0 (2026-04-05)
+## 🚀 Current Release: v0.6.0 (2026-04-05)
 
 | Component | Version | Description |
 |-----------|---------|-------------|
-| **Archivolt CLI / API** | `0.4.0` | Core logic, Recording Proxy, Semantic Analysis, Optimization Report. |
-| **Web Dashboard** | `0.4.0` | ReactFlow Canvas, VFK Review UX, Timeline Playback. |
+| **Archivolt CLI / API** | `0.6.0` | Core logic, Recording Proxy, Semantic Analysis, Optimization Report, Log Import, AI Skills. |
+| **Web Dashboard** | `0.6.0` | ReactFlow Canvas, VFK Review UX, Timeline Playback. |
 | **Chrome Extension** | `1.0.0` | Browser event capture (navigate, submit, click, request). |
 
 ---
@@ -26,7 +26,12 @@ This document tracks the release versions and compatibility requirements for all
 
 ## 📅 Release History (Summary)
 
-- **v0.4.0** (Current):
+- **v0.6.0** (Current):
+  - ✨ Added **AI Skill Family** — `archivolt-schema`, `archivolt-record`, `archivolt-analyze`, `archivolt-advisor` for guided reverse-engineering and architecture recommendation.
+  - ✨ Added **`install-skill`** CLI command for Claude Code / Cursor / Codex distribution.
+- **v0.5.0**:
+  - ✨ Added **Log File Analysis** (`--from general-log|slow-log|canonical`).
+- **v0.4.0**:
   - ✨ Added **VFK Review UX** (Pending/Confirmed/Ignored status).
   - ✨ Added **Table Name Filter** in ER Canvas.
   - ✅ Finalized **Optimization Report Pipeline** (Layer 1, 2a, 2b).

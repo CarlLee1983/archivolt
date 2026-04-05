@@ -72,6 +72,11 @@ bun run dev export mermaid --output ./docs/schema
 bun run dev export prisma --output ./prisma
 bun run dev export dbml --output ./docs
 
+# AI Skills (Claude Code / Cursor / Codex)
+bun run dev install-skill           # Install skills to ~/.claude/plugins/archivolt/skills/
+bun run dev install-skill --cursor  # Write skills as .mdc to .cursor/rules/
+bun run dev install-skill --codex   # Write combined system prompt to archivolt-skills-system-prompt.md
+
 # Quality
 bun run check            # typecheck + lint + test (all)
 bun run typecheck        # TypeScript typecheck

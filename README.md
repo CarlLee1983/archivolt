@@ -128,6 +128,7 @@ In many legacy systems, databases have numerous "implicit relationships"—colum
 - `src/Modules/Doctor`: Environment diagnostics, dependency verification, and auto-fix logic.
 - `web/`: React + ReactFlow frontend application with interactive vFK Review dashboard.
 - `extension/`: Chrome extension for browser event capturing.
+- `skills/`: Claude Code skill files for guided reverse-engineering and architecture advisory workflows. Install with `archivolt install-skill`.
 - `archivolt.json`: The local data store for your annotations.
 
 ### Detailed Documentation

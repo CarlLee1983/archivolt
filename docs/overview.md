@@ -28,4 +28,4 @@ Archivolt is a local ER visualization and annotation tool. It helps developers u
 
 ## Version
 
-Currently v0.3.0 (April 2026)
+Currently v0.5.0 (April 2026)
