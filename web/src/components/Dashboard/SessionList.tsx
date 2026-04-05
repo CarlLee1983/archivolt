@@ -31,46 +31,46 @@ export function SessionList({ sessions, loading }: Props) {
           <table className="w-full border-collapse">
             <thead>
               <tr className="text-text-muted border-b-2 border-border text-left uppercase font-black tracking-[0.2em] bg-panel/30">
-                <th className="px-6 py-4 font-black w-16 text-center">st</th>
-                <th className="px-6 py-4 font-black">log_identifier</th>
-                <th className="px-6 py-4 font-black text-right">telemetry</th>
-                <th className="px-6 py-4 font-black text-right">command</th>
+                <th className="px-4 py-4 font-black w-8 text-center">st</th>
+                <th className="px-4 py-4 font-black">log_identifier</th>
+                <th className="px-4 py-4 font-black text-right">telemetry</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {sorted.map((session) => (
-                <tr key={session.id} className="group hover:bg-white/[0.02] transition-all">
-                  <td className="px-6 py-5 text-center">
-                    <div className={`w-2 h-2 rounded-full mx-auto shadow-sm ${
-                      session.status === 'recording' ? 'bg-success animate-pulse shadow-[0_0_8px_rgba(87,171,90,0.4)]' : 'bg-slate-800'
-                    }`} />
-                  </td>
-                  <td className="px-6 py-5">
-                    <div className="flex flex-col gap-1">
-                      <span className="text-text font-black group-hover:text-primary transition-colors tracking-tight text-[13px]">{session.id.slice(0, 32)}</span>
-                      <span className="text-text-muted text-[10px] font-bold tracking-widest">{formatDate(session.startedAt)}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-5 text-right font-bold text-text-dim">
-                    <div className="flex flex-col gap-1">
-                      <span className="text-warning opacity-90 text-[13px]">{session.stats.totalQueries} <span className="text-[9px] font-black uppercase opacity-40">Queries</span></span>
-                      <span className="text-[10px] text-text-muted font-black uppercase">{session.httpChunkCount} <span className="opacity-40 text-[8px]">Chunks</span></span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-5 text-right">
-                    {(session.hasManifest || session.hasOptimizationReport) ? (
-                      <button
-                        onClick={() => navigate(`/report/${session.id}`)}
-                        className="px-4 py-1.5 bg-panel border border-border text-text-dim hover:text-primary hover:border-primary font-black cursor-pointer rounded transition-all active:scale-90 text-[10px] uppercase tracking-widest"
-                      >
-                        Open_Rep
-                      </button>
-                    ) : (
-                      <span className="text-text-muted opacity-20 font-black text-[10px] tracking-widest pr-4 uppercase">No_Data</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
+              {sorted.map((session) => {
+                return (
+                  <tr
+                    key={session.id}
+                    onClick={() => navigate(`/session/${session.id}`)}
+                    className="group transition-all cursor-pointer hover:bg-white/[0.04]"
+                  >
+                    <td className="px-4 py-5 text-center">
+                      <div className={`w-2 h-2 rounded-full mx-auto shadow-sm ${
+                        session.status === 'recording' ? 'bg-success animate-pulse shadow-[0_0_8px_rgba(87,171,90,0.4)]' : 'bg-slate-800'
+                      }`} />
+                    </td>
+                    <td className="px-4 py-5">
+                      <div className="flex flex-col gap-1">
+                        <span className="font-black transition-colors tracking-tight text-[13px] text-text group-hover:text-primary">
+                          {session.id.slice(0, 28)}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-text-muted text-[10px] font-bold tracking-widest">{formatDate(session.startedAt)}</span>
+                          {(session.hasManifest || session.hasOptimizationReport) && (
+                            <span className="text-[9px] font-black text-primary/60 uppercase tracking-widest">→ rep</span>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-5 text-right font-bold text-text-dim">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-warning opacity-90 text-[13px]">{session.stats.totalQueries} <span className="text-[9px] font-black uppercase opacity-40">Q</span></span>
+                        <span className="text-[10px] text-text-muted font-black uppercase">{session.httpChunkCount} <span className="opacity-40 text-[8px]">C</span></span>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         )}

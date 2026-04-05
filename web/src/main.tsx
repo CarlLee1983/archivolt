@@ -1,11 +1,16 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom'
 import './index.css'
 import Dashboard from './pages/Dashboard'
 import CanvasPage from './pages/CanvasPage'
-import ReportViewer from './pages/ReportViewer'
 import ReviewPage from './pages/ReviewPage'
+import SessionPage from './pages/SessionPage'
+
+function ReportRedirect() {
+  const { sessionId } = useParams<{ sessionId: string }>()
+  return <Navigate to={`/session/${sessionId}`} replace />
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -13,7 +18,8 @@ createRoot(document.getElementById('root')!).render(
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/canvas" element={<CanvasPage />} />
-        <Route path="/report/:sessionId" element={<ReportViewer />} />
+        <Route path="/session/:sessionId" element={<SessionPage />} />
+        <Route path="/report/:sessionId" element={<ReportRedirect />} />
         <Route path="/review" element={<ReviewPage />} />
       </Routes>
     </BrowserRouter>
