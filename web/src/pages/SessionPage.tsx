@@ -65,6 +65,7 @@ export default function SessionPage() {
       return
     }
 
+    esRef.current?.close()
     const es = new EventSource(dashboardApi.analyzeStreamUrl(sessionId))
     esRef.current = es
 

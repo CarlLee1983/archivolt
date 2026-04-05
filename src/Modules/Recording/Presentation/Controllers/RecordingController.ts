@@ -320,9 +320,17 @@ export class RecordingController {
           )
         }
 
+        const startedAt = Date.now()
         timer = setInterval(() => {
           const job = jobs.get(id)
-          if (!job) return
+          if (!job) {
+            if (Date.now() - startedAt > 5000) {
+              send('error', { message: `No analysis job found for session ${id}` })
+              clearInterval(timer!)
+              controller.close()
+            }
+            return
+          }
 
           while (sentCount < job.logs.length) {
             send('progress', { message: job.logs[sentCount] })
