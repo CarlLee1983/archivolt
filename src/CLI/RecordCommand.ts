@@ -93,6 +93,26 @@ function parseEnvFile(envPath: string): { host: string; port: number; driver?: s
   return { host, port, driver }
 }
 
+type ShutdownService = { stop: () => Promise<{ stats: { totalQueries: number }; id: string }> }
+type HttpProxy = { stop: () => void }
+type NodeProcess = { on: (signal: string, handler: () => void) => void }
+
+export function registerShutdownHandlers(
+  service: ShutdownService,
+  httpProxy: HttpProxy | undefined,
+  proc: NodeProcess = process,
+): void {
+  const handler = async () => {
+    const stopped = await service.stop()
+    httpProxy?.stop()
+    console.log(`\nRecording stopped. ${stopped.stats.totalQueries} queries captured.`)
+    console.log(`Session: ${stopped.id}`)
+    process.exit(0)
+  }
+  proc.on('SIGINT', handler)
+  proc.on('SIGTERM', handler)
+}
+
 export async function runRecordCommand(argv: string[]): Promise<void> {
   const args = parseRecordArgs(argv)
   const recordingsDir =
@@ -153,13 +173,7 @@ ${httpProxy ? `Point your HTTP traffic to http://127.0.0.1:${args.httpProxyPort}
 Press Ctrl+C to stop recording.
 `)
 
-      process.on('SIGINT', async () => {
-        const stopped = await service.stop()
-        httpProxy?.stop()
-        console.log(`\nRecording stopped. ${stopped.stats.totalQueries} queries captured.`)
-        console.log(`Session: ${stopped.id}`)
-        process.exit(0)
-      })
+      registerShutdownHandlers(service, httpProxy)
 
       await new Promise(() => {})
       break

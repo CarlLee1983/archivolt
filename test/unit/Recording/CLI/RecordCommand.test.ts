@@ -60,3 +60,17 @@ describe('parseRecordArgs', () => {
     expect(() => parseRecordArgs(['record', 'start'])).toThrow()
   })
 })
+
+describe('registerShutdownHandlers', () => {
+  it('registers both SIGINT and SIGTERM', () => {
+    const { registerShutdownHandlers } = require('@/CLI/RecordCommand')
+    const registered: string[] = []
+    const fakeProcess = { on: (sig: string, _fn: unknown) => registered.push(sig) }
+    const fakeService = { stop: async () => ({ stats: { totalQueries: 0 }, id: 'x' }) }
+
+    registerShutdownHandlers(fakeService as any, undefined, fakeProcess as any)
+
+    expect(registered).toContain('SIGINT')
+    expect(registered).toContain('SIGTERM')
+  })
+})

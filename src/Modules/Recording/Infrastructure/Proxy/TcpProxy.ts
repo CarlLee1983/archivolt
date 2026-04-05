@@ -10,6 +10,7 @@ interface TcpProxyConfig {
   readonly listenPort: number
   readonly targetHost: string
   readonly targetPort: number
+  readonly sessionId: string
   readonly parser: IProtocolParser
   readonly onQuery: (query: CapturedQuery) => void
 }
@@ -31,7 +32,7 @@ export class TcpProxy {
 
   constructor(config: TcpProxyConfig) {
     this.config = config
-    this.sessionId = `proxy_${Date.now()}`
+    this.sessionId = config.sessionId
   }
 
   get connectionCount(): number {

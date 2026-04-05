@@ -78,6 +78,7 @@ describe('TcpProxy', () => {
       listenPort: 0,
       targetHost: '127.0.0.1',
       targetPort: mockDbPort,
+      sessionId: 'test-session',
       parser: new MysqlProtocolParser(),
       onQuery: (query) => {
         captured.push(query)
@@ -112,6 +113,44 @@ describe('TcpProxy', () => {
     expect(captured[0].tables).toContain('users')
   })
 
+  it('uses the sessionId from config in captured queries', async () => {
+    const handshake = buildHandshakePacket()
+    const okResponse = buildOkPacket(1)
+
+    mockDb = Bun.listen({
+      hostname: '127.0.0.1',
+      port: 0,
+      socket: {
+        open(socket) { socket.write(handshake) },
+        data(socket) { socket.write(okResponse) },
+        close() {},
+        error() {},
+      },
+    })
+
+    const captured: CapturedQuery[] = []
+    proxy = new TcpProxy({
+      listenPort: 0,
+      targetHost: '127.0.0.1',
+      targetPort: mockDb.port,
+      sessionId: 'my-session-123',
+      parser: new MysqlProtocolParser(),
+      onQuery: (q) => captured.push(q),
+    })
+
+    const proxyPort = await proxy.start()
+    const client = await Bun.connect({
+      hostname: '127.0.0.1', port: proxyPort,
+      socket: { data() {}, open() {}, close() {}, error() {} },
+    })
+    await new Promise((r) => setTimeout(r, 100))
+    client.write(buildComQuery('SELECT 1'))
+    await new Promise((r) => setTimeout(r, 200))
+    client.end()
+
+    expect(captured[0].sessionId).toBe('my-session-123')
+  })
+
   it('reports connection count', async () => {
     const handshake = buildHandshakePacket()
 
@@ -132,6 +171,7 @@ describe('TcpProxy', () => {
       listenPort: 0,
       targetHost: '127.0.0.1',
       targetPort: mockDb.port,
+      sessionId: 'test-session',
       parser: new MysqlProtocolParser(),
       onQuery: () => {},
     })

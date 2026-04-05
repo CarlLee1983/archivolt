@@ -115,6 +115,21 @@ async function start() {
   const port = (core.config.get<number>('PORT') ?? 3100) as number
   const server = core.liftoff(port)
 
+  // Graceful shutdown: stop any active recording before exit
+  const gracefulShutdown = async () => {
+    try {
+      const { RecordingService } = await import('@/Modules/Recording/Application/Services/RecordingService')
+      const svc = core.container.make('recordingService') as InstanceType<typeof RecordingService>
+      if (svc.isRecording) {
+        const stopped = await svc.stop()
+        console.log(`\nRecording stopped on shutdown. ${stopped.stats.totalQueries} queries captured.`)
+      }
+    } catch {}
+    process.exit(0)
+  }
+  process.on('SIGINT', gracefulShutdown)
+  process.on('SIGTERM', gracefulShutdown)
+
   // 自動開啟瀏覽器
   const openBrowser = (url: string): void => {
     const cmd =

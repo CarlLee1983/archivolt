@@ -110,6 +110,7 @@ export class RecordingService {
       listenPort: config.listenPort,
       targetHost: config.targetHost,
       targetPort: config.targetPort,
+      sessionId: session.id,
       parser: this.parser,
       onQuery: (query) => this.handleQuery(query),
     })

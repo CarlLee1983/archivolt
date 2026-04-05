@@ -6,6 +6,7 @@ import type {
 
 // MySQL Command Bytes
 const COM_QUERY = 0x03
+const COM_STMT_PREPARE = 0x16
 
 // MySQL Response Headers
 const OK_HEADER = 0x00
@@ -40,7 +41,7 @@ export class MysqlProtocolParser implements IProtocolParser {
 
     const { payload } = packet
     if (payload.length < 1) return null
-    if (payload[0] !== COM_QUERY) return null
+    if (payload[0] !== COM_QUERY && payload[0] !== COM_STMT_PREPARE) return null
 
     const sql = payload.subarray(1).toString('utf-8')
     return { sql }

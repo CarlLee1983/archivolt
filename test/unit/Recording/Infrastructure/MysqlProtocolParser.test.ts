@@ -57,6 +57,16 @@ describe('MysqlProtocolParser', () => {
       expect(result!.sql).toBe('SELECT * FROM users')
     })
 
+    it('extracts SQL from COM_STMT_PREPARE packet', () => {
+      const sql = 'SELECT * FROM users WHERE id = ?'
+      // COM_STMT_PREPARE = 0x16, same wire format as COM_QUERY
+      const payload = Buffer.concat([Buffer.from([0x16]), Buffer.from(sql, 'utf-8')])
+      const packet = buildPacket(0, payload)
+      const result = parser.extractQuery(packet)
+      expect(result).not.toBeNull()
+      expect(result!.sql).toBe(sql)
+    })
+
     it('returns null for non-COM_QUERY packets', () => {
       // COM_QUIT = 0x01
       const payload = Buffer.from([0x01])
