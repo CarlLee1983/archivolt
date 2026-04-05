@@ -27,53 +27,55 @@ export class LogImportService {
     const tablesAccessed = new Set<string>()
     const connectionIds = new Set<string>()
 
-    for await (const event of parser.parse(filePath)) {
-      const { operation, tables } = analyzeQuery(event.sql)
+    try {
+      for await (const event of parser.parse(filePath)) {
+        const { operation, tables } = analyzeQuery(event.sql)
 
-      const query = createCapturedQuery({
-        sessionId,
-        connectionId: event.connectionId ? parseInt(event.connectionId, 10) : 0,
-        sql: event.sql,
-        operation,
-        tables: [...tables],
-        duration: event.durationMs ?? 0,
-      })
+        const query = createCapturedQuery({
+          sessionId,
+          connectionId: event.connectionId ? parseInt(event.connectionId, 10) : 0,
+          sql: event.sql,
+          operation,
+          tables: [...tables],
+          duration: event.durationMs ?? 0,
+        })
 
-      // Override auto-generated timestamp with log's timestamp
-      const queryWithTs = { ...query, timestamp: event.timestamp }
+        // Override auto-generated timestamp with log's timestamp
+        const queryWithTs = { ...query, timestamp: event.timestamp }
 
-      this.repo.appendQueries(sessionId, [queryWithTs])
+        this.repo.appendQueries(sessionId, [queryWithTs])
 
-      totalQueries++
-      if (firstTimestamp === undefined || event.timestamp < firstTimestamp) {
-        firstTimestamp = event.timestamp
+        totalQueries++
+        if (firstTimestamp === undefined || event.timestamp < firstTimestamp) {
+          firstTimestamp = event.timestamp
+        }
+        if (lastTimestamp === undefined || event.timestamp > lastTimestamp) {
+          lastTimestamp = event.timestamp
+        }
+        byOperation[operation] = (byOperation[operation] ?? 0) + 1
+        for (const t of tables) tablesAccessed.add(t)
+        if (event.connectionId) connectionIds.add(event.connectionId)
       }
-      if (lastTimestamp === undefined || event.timestamp > lastTimestamp) {
-        lastTimestamp = event.timestamp
+
+      const session: RecordingSession = {
+        id: sessionId,
+        startedAt: firstTimestamp ?? Date.now(),
+        endedAt: lastTimestamp ?? Date.now(),
+        status: 'stopped',
+        proxy: { listenPort: 0, targetHost: 'imported', targetPort: 0 },
+        stats: {
+          totalQueries,
+          byOperation,
+          tablesAccessed: [...tablesAccessed].sort(),
+          connectionCount: connectionIds.size,
+        },
       }
-      byOperation[operation] = (byOperation[operation] ?? 0) + 1
-      for (const t of tables) tablesAccessed.add(t)
-      if (event.connectionId) connectionIds.add(event.connectionId)
+
+      await this.repo.saveSession(session)
+      return sessionId
+    } finally {
+      await this.repo.closeStreams(sessionId)
     }
-
-    await this.repo.closeStreams(sessionId)
-
-    const session: RecordingSession = {
-      id: sessionId,
-      startedAt: firstTimestamp ?? Date.now(),
-      endedAt: lastTimestamp ?? Date.now(),
-      status: 'stopped',
-      proxy: { listenPort: 0, targetHost: 'imported', targetPort: 0 },
-      stats: {
-        totalQueries,
-        byOperation,
-        tablesAccessed: [...tablesAccessed].sort(),
-        connectionCount: connectionIds.size,
-      },
-    }
-
-    await this.repo.saveSession(session)
-    return sessionId
   }
 
   private selectParser(format: ImportFormat): IQueryLogParser {
