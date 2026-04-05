@@ -11,6 +11,8 @@ triggers:
 
 # archivolt-schema
 
+> **Language rule:** Detect the user's language from the conversation. Ask all quoted questions and confirmations in that language.
+
 Guide the developer through environment setup, schema collection, and Virtual Foreign Key review for a legacy database.
 
 ## When to use

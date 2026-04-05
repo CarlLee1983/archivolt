@@ -12,6 +12,8 @@ triggers:
 
 # archivolt-advisor
 
+> **Language rule:** Detect the user's language from the conversation. Ask all quoted questions and confirmations in that language.
+
 Read Archivolt reverse-engineering artifacts and produce an architecture recommendation for refactoring or migrating a legacy system. Combines data-driven signals from Archivolt with developer context to recommend the right architecture — not over-engineer, not under-engineer.
 
 ## When to use
