@@ -1,0 +1,9 @@
+/usr/sbin/mysqld, Version: 8.0.32. started with:
+Tcp port: 3306  Unix socket: /var/run/mysqld/mysqld.sock
+Time                 Id Command    Argument
+2024-04-05T10:00:00.000000Z	   42 Query	SELECT * FROM users WHERE id = 1
+2024-04-05T10:00:00.010000Z	   42 Query	SELECT * FROM orders WHERE user_id = 1
+2024-04-05T10:00:00.020000Z	   43 Connect	root@localhost on testdb using TCP/IP
+2024-04-05T10:00:00.030000Z	   43 Query	INSERT INTO logs (msg) VALUES ('ok')
+2024-04-05T10:00:00.040000Z	   42 Quit
+240405 10:00:01	   44 Query	SELECT 1
