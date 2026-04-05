@@ -85,4 +85,17 @@ export const dashboardApi = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     }).then((r) => r.json()),
+
+  runAnalysis: (
+    sessionId: string,
+    type: 'manifest' | 'optimize',
+  ): Promise<{ success: boolean; data?: { jobId: string }; error?: { code: string; message: string } }> =>
+    fetch(`/api/recordings/${sessionId}/analyze`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type }),
+    }).then((r) => r.json()),
+
+  analyzeStreamUrl: (sessionId: string): string =>
+    `/api/recordings/${sessionId}/analyze/stream`,
 }
