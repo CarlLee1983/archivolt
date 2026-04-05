@@ -3,12 +3,18 @@
   "name": "Archivolt Marker",
   "version": "1.0.0",
   "description": "Auto-capture browser events as Archivolt operation markers",
-  "permissions": ["activeTab", "webNavigation", "storage"],
+  "permissions": ["activeTab", "tabs", "webNavigation", "storage"],
   "background": {
     "service_worker": "dist/background.js",
     "type": "module"
   },
   "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["dist/content-main.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
     {
       "matches": ["<all_urls>"],
       "js": ["dist/content.js"],

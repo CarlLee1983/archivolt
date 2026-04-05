@@ -3,6 +3,7 @@ import { build } from 'bun'
 await build({
   entrypoints: [
     './src/background.ts',
+    './src/content-main.ts',
     './src/content.ts',
     './src/popup.ts',
   ],
