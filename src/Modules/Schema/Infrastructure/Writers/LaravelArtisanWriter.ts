@@ -82,8 +82,13 @@ export class LaravelArtisanWriter implements IFileWriter {
     for (const [filename, content] of result.files) {
       const modelName = filename.replace('.php', '')
       await this.exec(`php artisan make:model ${modelName}`, { cwd: this.laravelPath })
+
       const modelPath = path.join(this.laravelPath, 'app', 'Models', filename)
-      writeFileSync(modelPath, content, 'utf-8')
+      const stubContent = readFileSync(modelPath, 'utf-8')
+      const stubContext = parseStubContext(stubContent, modelPath)
+      const mergedContent = applyStubContext(content, stubContext)
+
+      writeFileSync(modelPath, mergedContent, 'utf-8')
     }
   }
 

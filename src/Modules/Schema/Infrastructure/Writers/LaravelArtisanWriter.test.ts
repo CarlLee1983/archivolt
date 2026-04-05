@@ -156,3 +156,75 @@ describe('applyStubContext', () => {
     expect(result).toContain('    use HasFactory;')
   })
 })
+
+import { LaravelArtisanWriter } from './LaravelArtisanWriter'
+import { readFileSync, writeFileSync, mkdirSync, rmSync } from 'node:fs'
+import path from 'node:path'
+import os from 'node:os'
+
+describe('LaravelArtisanWriter.write() integration', () => {
+  it('merges artisan stub namespace and HasFactory into rendered output', async () => {
+    const tmpDir = path.join(os.tmpdir(), `archivolt-test-${Date.now()}`)
+    mkdirSync(path.join(tmpDir, 'app', 'Models'), { recursive: true })
+    writeFileSync(
+      path.join(tmpDir, 'composer.json'),
+      JSON.stringify({ require: { 'laravel/framework': '^11.0' } }),
+    )
+
+    const modelFile = path.join(tmpDir, 'app', 'Models', 'User.php')
+
+    // Mock exec: simulates artisan writing a L11-style stub
+    const mockExec = async (_cmd: string, _opts: { cwd: string }) => {
+      writeFileSync(
+        modelFile,
+        [
+          '<?php',
+          '',
+          'namespace App\\Models;',
+          '',
+          'use Illuminate\\Database\\Eloquent\\Factories\\HasFactory;',
+          'use Illuminate\\Database\\Eloquent\\Model;',
+          '',
+          'class User extends Model',
+          '{',
+          '    use HasFactory;',
+          '}',
+          '',
+        ].join('\n'),
+      )
+    }
+
+    const writer = new LaravelArtisanWriter(tmpDir, mockExec)
+    await writer.write({
+      files: new Map([
+        [
+          'User.php',
+          [
+            '<?php',
+            '',
+            'namespace App\\Models;',
+            '',
+            'use Illuminate\\Database\\Eloquent\\Model;',
+            '',
+            'class User extends Model',
+            '{',
+            "    protected $table = 'users';",
+            '',
+            "    protected $fillable = ['name'];",
+            '',
+            '}',
+            '',
+          ].join('\n'),
+        ],
+      ]),
+    })
+
+    const written = readFileSync(modelFile, 'utf-8')
+    expect(written).toContain('use Illuminate\\Database\\Eloquent\\Factories\\HasFactory;')
+    expect(written).toContain('    use HasFactory;')
+    expect(written).toContain("protected $table = 'users';")
+    expect(written).toContain("protected $fillable = ['name'];")
+
+    rmSync(tmpDir, { recursive: true })
+  })
+})

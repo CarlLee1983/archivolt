@@ -40,12 +40,34 @@ describe('LaravelArtisanWriter', () => {
     await expect(writer.write(result)).rejects.toThrow('Not a Laravel project')
   })
 
-  it('runs artisan make:model and overwrites with our content', async () => {
+  function makeArtisanStub(laravelPath: string, modelName: string): void {
+    writeFileSync(
+      path.join(laravelPath, 'app', 'Models', `${modelName}.php`),
+      `<?php\n\nnamespace App\\Models;\n\nuse Illuminate\\Database\\Eloquent\\Model;\n\nclass ${modelName} extends Model\n{\n}\n`,
+    )
+  }
+
+  it('runs artisan make:model and writes merged content', async () => {
     const laravelPath = setupFakeLaravel()
-    const mockExec = vi.fn().mockResolvedValue(undefined)
+    const mockExec = vi.fn().mockImplementation(async (_cmd: string) => {
+      makeArtisanStub(laravelPath, 'Order')
+    })
     const writer = new LaravelArtisanWriter(laravelPath, mockExec)
+    const renderedPhp = [
+      '<?php',
+      '',
+      'namespace App\\Models;',
+      '',
+      'use Illuminate\\Database\\Eloquent\\Model;',
+      '',
+      'class Order extends Model',
+      '{',
+      "    protected $table = 'orders';",
+      '}',
+      '',
+    ].join('\n')
     const result: ExportResult = {
-      files: new Map([['Order.php', '<?php\nclass Order extends Model {}']]),
+      files: new Map([['Order.php', renderedPhp]]),
     }
     await writer.write(result)
     expect(mockExec).toHaveBeenCalledWith(
@@ -53,22 +75,43 @@ describe('LaravelArtisanWriter', () => {
       expect.objectContaining({ cwd: laravelPath }),
     )
     const content = readFileSync(path.join(laravelPath, 'app', 'Models', 'Order.php'), 'utf-8')
-    expect(content).toBe('<?php\nclass Order extends Model {}')
+    expect(content).toContain("protected $table = 'orders';")
   })
 
   it('processes multiple models', async () => {
     const laravelPath = setupFakeLaravel()
-    const mockExec = vi.fn().mockResolvedValue(undefined)
+    const mockExec = vi.fn().mockImplementation(async (cmd: string) => {
+      const match = cmd.match(/make:model (\w+)/)
+      if (match) makeArtisanStub(laravelPath, match[1])
+    })
     const writer = new LaravelArtisanWriter(laravelPath, mockExec)
+    const makePhp = (name: string, table: string) =>
+      [
+        '<?php',
+        '',
+        'namespace App\\Models;',
+        '',
+        'use Illuminate\\Database\\Eloquent\\Model;',
+        '',
+        `class ${name} extends Model`,
+        '{',
+        `    protected $table = '${table}';`,
+        '}',
+        '',
+      ].join('\n')
     const result: ExportResult = {
       files: new Map([
-        ['Order.php', '<?php class Order {}'],
-        ['User.php', '<?php class User {}'],
+        ['Order.php', makePhp('Order', 'orders')],
+        ['User.php', makePhp('User', 'users')],
       ]),
     }
     await writer.write(result)
     expect(mockExec).toHaveBeenCalledTimes(2)
-    expect(readFileSync(path.join(laravelPath, 'app', 'Models', 'Order.php'), 'utf-8')).toBe('<?php class Order {}')
-    expect(readFileSync(path.join(laravelPath, 'app', 'Models', 'User.php'), 'utf-8')).toBe('<?php class User {}')
+    expect(readFileSync(path.join(laravelPath, 'app', 'Models', 'Order.php'), 'utf-8')).toContain(
+      "protected $table = 'orders';",
+    )
+    expect(readFileSync(path.join(laravelPath, 'app', 'Models', 'User.php'), 'utf-8')).toContain(
+      "protected $table = 'users';",
+    )
   })
 })
