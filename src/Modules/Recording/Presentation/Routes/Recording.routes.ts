@@ -22,6 +22,8 @@ export function registerRecordingRoutes(
     r.get('/recordings/:id/chunks/:chunkId/queries', (ctx) => controller.getChunkQueries(ctx))
     r.get('/recordings/:id/manifest', (ctx) => controller.getManifest(ctx))
     r.get('/report/:id/:type', (ctx) => controller.getReport(ctx))
+    r.post('/recordings/:id/analyze', (ctx) => controller.triggerAnalysis(ctx))
+    r.get('/recordings/:id/analyze/stream', (ctx) => controller.streamAnalysis(ctx))
 
     // SSE — 回傳 raw Response（繞過 IHttpContext，直接以 ReadableStream 推送事件）
     r.get('/recording/live', async (_ctx) => {
