@@ -3,6 +3,10 @@
 **Date:** 2026-04-05
 **Status:** Approved
 
+## Design Principle
+
+`archivolt-advisor` and `archivolt-implement` are **optional guidance tools**, not mandatory steps. They target engineers who lack architectural direction or hands-on experience. Experienced developers may skip these skills entirely and use the raw Archivolt artifacts directly.
+
 ## Problem
 
 After `archivolt-advisor` recommends an architecture, developers with little architectural experience have no guided path to actually scaffold the project. Creating one skill per architecture × framework combination would cause combinatorial explosion (5 architectures × N frameworks).
