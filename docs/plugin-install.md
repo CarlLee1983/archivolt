@@ -82,6 +82,18 @@ cat archivolt-skills-system-prompt.md | head -40
 
 ---
 
+## What gets installed
+
+`archivolt install-skill` copies:
+
+- `archivolt-schema.md`, `archivolt-record.md`, `archivolt-analyze.md`, `archivolt-advisor.md` — core workflow skills
+- `archivolt-implement.md` — optional guided scaffolding skill
+- `playbooks/` — architecture phase sequences and framework command tables (used by `archivolt-implement`)
+
+The `archivolt-implement` skill and playbooks are **optional**. Experienced developers who already know their architecture and tooling can use the other four skills without ever invoking `archivolt-implement`.
+
+---
+
 ## Using the skills
 
 Once installed, invoke a skill by describing what you want to do. The skill auto-triggers on matching phrases:
