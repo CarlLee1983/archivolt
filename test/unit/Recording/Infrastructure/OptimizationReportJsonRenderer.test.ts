@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { renderOptimizationReportJson } from './OptimizationReportJsonRenderer'
-import type { OptimizationReportData } from './OptimizationReportRenderer'
+import { renderOptimizationReportJson } from '@/Modules/Recording/Infrastructure/Renderers/OptimizationReportJsonRenderer'
+import type { OptimizationReportData } from '@/Modules/Recording/Infrastructure/Renderers/OptimizationReportRenderer'
 
 const sampleData: OptimizationReportData = {
   sessionId: 'test-123',
@@ -15,7 +15,7 @@ const sampleData: OptimizationReportData = {
 }
 
 describe('renderOptimizationReportJson', () => {
-  it('產出合法 JSON 字串', () => {
+  it('produces valid JSON string', () => {
     const result = renderOptimizationReportJson(sampleData)
     const parsed = JSON.parse(result)
     expect(parsed.sessionId).toBe('test-123')
@@ -23,7 +23,7 @@ describe('renderOptimizationReportJson', () => {
     expect(parsed.n1Findings).toEqual([])
   })
 
-  it('包含所有 OptimizationReportData 欄位', () => {
+  it('includes all OptimizationReportData fields', () => {
     const result = renderOptimizationReportJson(sampleData)
     const parsed = JSON.parse(result)
     expect(parsed).toHaveProperty('enabledLayers')

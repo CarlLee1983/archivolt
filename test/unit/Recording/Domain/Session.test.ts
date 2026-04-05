@@ -4,6 +4,7 @@ import {
   stopSession,
   updateSessionStats,
   createCapturedQuery,
+  applyIncrementalStats,
   type ProxyConfig,
   type CapturedQuery,
 } from '@/Modules/Recording/Domain/Session'
@@ -105,5 +106,34 @@ describe('createCapturedQuery', () => {
     expect(q.id).toMatch(/^q_/)
     expect(q.timestamp).toBeGreaterThan(0)
     expect(q.sql).toBe('SELECT 1')
+  })
+})
+
+describe('applyIncrementalStats', () => {
+  it('writes incremental stats into session', () => {
+    const session = createSession(proxyConfig)
+    const stats = {
+      totalQueries: 5,
+      byOperation: { SELECT: 3, INSERT: 2 },
+      tablesAccessed: new Set(['users', 'orders']),
+    }
+
+    const updated = applyIncrementalStats(session, stats, 2)
+
+    expect(updated.stats.totalQueries).toBe(5)
+    expect(updated.stats.byOperation).toEqual({ SELECT: 3, INSERT: 2 })
+    expect(updated.stats.tablesAccessed).toEqual(['orders', 'users'])
+    expect(updated.stats.connectionCount).toBe(2)
+  })
+
+  it('does not mutate original session (immutable)', () => {
+    const session = createSession(proxyConfig)
+    const stats = {
+      totalQueries: 1,
+      byOperation: { SELECT: 1 },
+      tablesAccessed: new Set(['users']),
+    }
+    applyIncrementalStats(session, stats, 1)
+    expect(session.stats.totalQueries).toBe(0)
   })
 })

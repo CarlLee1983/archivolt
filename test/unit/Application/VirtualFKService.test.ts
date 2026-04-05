@@ -4,6 +4,7 @@ import {
   removeVirtualFK,
   confirmSuggestion,
   ignoreSuggestion,
+  restoreIgnored,
   applyInferredRelations,
 } from '@/Modules/Schema/Application/Services/VirtualFKService'
 import type { ERModel } from '@/Modules/Schema/Domain/ERModel'
@@ -204,5 +205,25 @@ describe('applyInferredRelations', () => {
 
     expect(result.model).not.toBe(baseModel)
     expect(baseModel.tables.users.virtualForeignKeys.length).toBe(originalVFKCount)
+  })
+})
+
+describe('restoreIgnored', () => {
+  it('restores ignored vFK back to auto-suggested', () => {
+    const model = { ...baseModel, tables: { ...baseModel.tables, orders: { ...baseModel.tables.orders, virtualForeignKeys: [{ ...baseModel.tables.orders.virtualForeignKeys[0], confidence: 'ignored' as const }] } } }
+    const newModel = restoreIgnored(model, 'orders', 'vfk_auto_1')
+
+    const vfk = newModel.tables.orders.virtualForeignKeys.find((v) => v.id === 'vfk_auto_1')
+    expect(vfk).toBeDefined()
+    expect(vfk?.confidence).toBe('auto-suggested')
+  })
+
+  it('returns a new model (immutable)', () => {
+    const ignoredModel = { ...baseModel, tables: { ...baseModel.tables, orders: { ...baseModel.tables.orders, virtualForeignKeys: [{ ...baseModel.tables.orders.virtualForeignKeys[0], confidence: 'ignored' as const }] } } }
+    const newModel = restoreIgnored(ignoredModel, 'orders', 'vfk_auto_1')
+
+    expect(newModel).not.toBe(ignoredModel)
+    const original = ignoredModel.tables.orders.virtualForeignKeys.find((v) => v.id === 'vfk_auto_1')
+    expect(original?.confidence).toBe('ignored')
   })
 })

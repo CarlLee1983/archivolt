@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { StatusController } from './StatusController'
+import { StatusController } from '@/Modules/Recording/Presentation/Controllers/StatusController'
 
 function makeCtx(overrides: Partial<{ json: any }> = {}) {
   return {
@@ -28,7 +28,7 @@ function makeRepo() {
 }
 
 describe('StatusController', () => {
-  it('回傳完整系統快照，proxy 未運行', async () => {
+  it('returns complete system snapshot when proxy is not running', async () => {
     const ctrl = new StatusController(makeService(), makeRepo())
     const ctx = makeCtx()
     await ctrl.getStatus(ctx)
@@ -39,7 +39,7 @@ describe('StatusController', () => {
     expect(call.data.schema.loaded).toBe(true)
   })
 
-  it('proxy DB 運行中時回傳 port', async () => {
+  it('returns proxy port when DB proxy is running', async () => {
     const ctrl = new StatusController(
       makeService({ isRecording: true, proxyPort: 13306 }),
       makeRepo(),

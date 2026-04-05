@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { RecordingController } from './RecordingController'
+import { RecordingController } from '@/Modules/Recording/Presentation/Controllers/RecordingController'
 
 function makeCtx(body: unknown = {}) {
   return {
@@ -48,7 +48,7 @@ function makeRepo() {
 }
 
 describe('RecordingController.list', () => {
-  it('sessions 列表包含 httpChunkCount、hasManifest、hasOptimizationReport', async () => {
+  it('sessions include httpChunkCount, hasManifest, hasOptimizationReport', async () => {
     const ctrl = new RecordingController(makeService(), makeRepo(), {} as any)
     const ctx = makeCtx()
     await ctrl.list(ctx)
