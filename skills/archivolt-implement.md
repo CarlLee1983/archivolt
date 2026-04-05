@@ -158,3 +158,5 @@ After all phases are complete (or skipped), write `SCAFFOLD.md` in the current d
 | `{{Module}}` | VFK cluster name from `archivolt.json` |
 | `{{Repository}}` | `{{Model}}Repository` |
 | `{{Service}}` | `{{Model}}Service` or cluster-level name |
+| `{{action}}` | Derived from HTTP method: GET collection → `index`, GET single → `show`, POST → `store`, PUT/PATCH → `update`, DELETE → `destroy` |
+| `{{table}}` | Original snake_case table name from `schema.sql` (before PascalCase conversion) |

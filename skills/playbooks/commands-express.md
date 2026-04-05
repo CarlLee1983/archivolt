@@ -1,7 +1,7 @@
 # Node.js + Express — Command Table
 
 Maps playbook action keys to file creation commands for a Node.js + Express project.
-Assumes TypeScript. Variables use {{PascalCase}} for class names, {{kebab-case}} for paths.
+Assumes TypeScript. Class name variables use PascalCase (e.g., `{{Controller}}`). Path variables use kebab-case (e.g., `{{path}}`).
 
 ## create-modules
 command: mkdir -p src/modules/{{module}}/{domain,application,infrastructure,presentation}
@@ -10,8 +10,8 @@ verify: is_dir(src/modules/{{module}}/domain)
 ## create-routes
 command: |
   # Append to src/routes/{{module}}.routes.ts:
-  router.{{method}}('/{{path}}', {{controller}}.{{action}});
-verify: grep -q "{{controller}}" src/routes/{{module}}.routes.ts
+  router.{{method}}('/{{path}}', {{Controller}}.{{action}});
+verify: grep -q "{{Controller}}" src/routes/{{module}}.routes.ts
 
 ## create-controllers
 command: |

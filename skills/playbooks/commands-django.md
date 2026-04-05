@@ -34,8 +34,6 @@ command: |
   class {{Model}}(models.Model):
       created_at = models.DateTimeField(auto_now_add=True)
       updated_at = models.DateTimeField(auto_now=True)
-      class Meta:
-          db_table = '{{table}}'
   PY
   python manage.py makemigrations
 verify: file_exists({{module}}/models.py)

@@ -1,7 +1,7 @@
 # Laravel — Command Table
 
 Maps playbook action keys to PHP artisan commands and file creation steps.
-Variables use {{PascalCase}} for class names, {{kebab-case}} for paths.
+Class name variables use PascalCase (e.g., `{{Controller}}`). Path variables use kebab-case (e.g., `{{path}}`).
 
 ## create-modules
 command: |
