@@ -14,6 +14,7 @@ Archivolt — Reverse-engineering tool for legacy projects: analyze and understa
 
 - **Git Commit Messages**: Must be written in **English** (following Conventional Commits).
 - **Communication**: Agent-developer interaction and local task discussions must be in **Traditional Chinese (繁體中文)**.
+- **Documentation**: For every `*.zh-TW.md` file, there must be a corresponding `*.md` English version as the primary source of truth.
 
 ## Core Architectural Decisions
 

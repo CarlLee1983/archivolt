@@ -11,15 +11,14 @@ Archivolt 由 **後端 (Bun)** 與 **前端 (Vite/React)** 組成。
 1. **安裝依賴**：
    ```bash
    bun install
-   cd web && bun install
    ```
 2. **啟動開發環境 (全系統)**：
    ```bash
-   # 在根目錄執行，將同時啟動 API Server 與 Web Dev Server
+   # 同時啟動 API Server 與 Web Dev Server
    bun run dev:all
    ```
-   - API: `http://localhost:3100`
-   - UI: `http://localhost:5173`
+   - API: `http://localhost:3100` (API 伺服器)
+   - UI: `http://localhost:5173` (Vite 預覽)
 
 3. **單獨啟動組件**：
    - 僅啟動 API (Hot Reload)：`bun run dev`

@@ -9,7 +9,7 @@
 ## ✨ 功能特色
 
 - **視覺化資料庫瀏覽器**：基於 [ReactFlow](https://reactflow.dev/) 構建，提供互動式且可縮放的 Schema 視覺化介面。
-- **虛擬外鍵 (Virtual Foreign Keys, vFK)**：標註表與表之間的「隱性」關聯，無需更動實際的資料庫結構。
+- **虛擬外鍵 (Virtual Foreign Keys, vFK)**：標註表與表之間的「隱性」關聯，無需更動實際的資料庫結構。**VFK Review UX** 提供專屬介面，可審核、確認或忽略自動偵測到的關聯建議，並具備即時狀態標章 (Status Badge)。
 - **智慧資料表分組**：自動根據現有的外鍵、欄位命名規則（如 `_id` 後綴）以及資料表前綴進行分組，讓龐大的資料庫結構變得易於管理。
 - **多格式導出支援**：
   - **Eloquent (PHP)**：生成包含 `$fillable`、`$casts` 以及關聯方法（`belongsTo`、`hasMany` 等）的 Laravel Model。
@@ -18,8 +18,9 @@
   - **Mermaid**：生成可嵌入 Markdown 文件的 ER 圖語法。
 - **查詢錄製與分組**：運行 TCP 代理以捕捉應用程式的即時資料庫查詢。使用導覽邊界 (navigate-boundary) 策略自動將查詢分組為邏輯「流程 (Flows)」，並具備噪音資料表自動偵測功能。
 - **HTTP 代理與 API 關聯分析**：內建 HTTP 反向代理，可捕捉 API 流量。自動在 500ms 時間窗口內將 HTTP 請求與資料庫查詢進行對齊，偵測 N+1 查詢模式並建立完整的行為模型。
-- **資料庫效能分析**：分析錄製階段各資料表的讀寫比例。自動標記適合 Redis 快取（讀取比 ≥90%）或 Read Replica 分流（讀取比 ≥80% 且查詢量高）的資料表。此為即將推出的 `--format optimize-md` 優化報告的第一層 (Layer 1)。
+- **效能優化報告** (`--format optimize-md`)：完整的三層 (Three-layer) 分析管線。Layer 1 根據錄製的會話進行離線分析：包含各資料表讀寫比與 Redis/Read Replica 建議、API 路徑層級的 N+1 查詢偵測、以及查詢碎片化偵測。Layer 2a 加入 DDL Schema 比對以偵測未索引的 WHERE 欄位 (`--ddl`)。Layer 2b 連線至實際資料庫以透過 EXPLAIN 確認全表掃描 (`--explain-db`)。每項發現均附帶可執行的 SQL 片段（`CREATE INDEX`、批次查詢重寫或快取註解），方便直接複製使用。
 - **Chrome 擴充功能整合**：捕捉瀏覽器事件（點擊、fetch、導覽）並與資料庫及 HTTP 錄製同步，提供全棧可觀測性。
+- **Archivolt Doctor**：內建診斷工具，驗證環境健康狀況、依賴關係與資料完整性，並提供互動式自動修復建議。
 - **強大的 CLI 指令**：直接將標註好的內容導出為檔案，或透過 Artisan 與 Laravel 專案深度整合。
 - **即時持久化**：所有變更會立即存入本地的 `archivolt.json`，這不僅是單一事實來源，也方便 LLM 讀取理解。
 
@@ -83,6 +84,17 @@
    ```bash
    # 分析會話以查看流程、N+1 模式與 Bootstrap 資訊
    bun run dev analyze <session-id> --stdout
+
+   # 生成資料庫效能優化報告（Layer 1：離線模式分析）
+   bun run dev analyze <session-id> --format optimize-md
+
+   # + Layer 2a：DDL Schema 比對（偵測未索引的 WHERE 欄位）
+   bun run dev analyze <session-id> --format optimize-md --ddl ./schema.sql
+
+   # + Layer 2b：即時 EXPLAIN 分析（連線至資料庫確認全表掃描）
+   bun run dev analyze <session-id> --format optimize-md \
+     --ddl ./schema.sql \
+     --explain-db mysql://user:pass@localhost:3306/mydb
    ```
 
 4. **使用 CLI 導出**：
@@ -98,11 +110,10 @@
 
 ## 🗺️ 專案結構
 
-- `src/Modules/Schema`：核心業務邏輯（採用 DDD 架構）。
-  - `Domain`：ER 模型實體與分組策略。
-  - `Application`：匯入、管理 vFK 以及導出相關服務。
-  - `Infrastructure`：JSON 持久化、各類導出器 (Eloquent, Prisma 等) 以及檔案寫入器。
-- `web/`：基於 React + ReactFlow 的前端應用程式。
+- `src/Modules/Schema`：核心業務邏輯（採用 DDD 架構，管理 ER 模型與 vFK）。
+- `src/Modules/Recording`：TCP/HTTP 代理基礎設施、查詢分組與會話分析。
+- `src/Modules/Doctor`：環境診斷、依賴驗證與自動修復邏輯。
+- `web/`：基於 React + ReactFlow 的前端應用，包含互動式 vFK Review 儀表板。
 - `extension/`：Chrome 擴充功能，用於捕捉瀏覽器事件。
 - `archivolt.json`：儲存標註資料的本地資料庫。
 

@@ -70,19 +70,27 @@ archivolt --input my-database.json --reimport
 
 ---
 
-## 階段 2：視覺化整理 (Organization)
+### 階段 2：視覺化整理 (Organization)
 
 面對動輒數百張資料表的老舊系統，首要任務是「降噪」。
 
-### 1. 啟動介面
+#### 1. 啟動介面
 
 ```bash
-archivolt
+# 同時啟動 API Server 與 Web Frontend
+bun run dev:all
 ```
 
-開啟瀏覽器訪問 `http://localhost:3100`，進入 ER 畫布。
+開啟瀏覽器訪問 `http://localhost:5173`，進入 ER 畫布。
 
-### 2. 智慧分組 (Smart Grouping)
+#### 2. 資料表篩選與搜尋 (Filtering)
+
+- **欄位關鍵字篩選**：在搜尋框輸入欄位名稱，畫布會自動隱藏不包含該欄位的資料表。
+- **資料表名稱篩選 (Table Name Filter)**：支援直接根據資料表名稱進行過濾，快速定位特定實體。
+- **LOD (Level of Detail)**：縮放至較小時會自動隱藏欄位細節，僅顯示資料表名稱以保持效能。
+
+#### 3. 智慧分組 (Smart Grouping)
+
 
 Archivolt 會根據資料表前綴或常見的欄位命名慣例自動建議分組。您可以：
 
@@ -206,7 +214,7 @@ archivolt analyze <session-id> --format json --stdout
 
 ### 方式 C2：效能診斷報告 (Optimization Report)
 
-`--format optimize-md` 是 analyze 的第二種輸出模式，專門為**效能問題診斷**設計。
+`--format optimize-md` 是 analyze 的主要輸出模式之一，專門為**效能問題診斷**設計。
 報告不只描述發生了什麼，而是直接給出**可執行的 SQL 優化指令**。
 
 ```bash
@@ -258,7 +266,18 @@ archivolt analyze <session-id> --format optimize-md --stdout
 
 預設輸出路徑：`data/analysis/<session-id>/optimization-report.md`
 
-### 方式 D：批次匯入推斷關係
+### 方式 D：VFK Review 介面 (新功能 ✨)
+
+錄製分析後產出的虛擬外鍵建議，現在可以透過專屬的 **Review 介面** 進行管理：
+
+1. **進入 Review Tab**：在導覽列點擊 "Review"，若有新的建議，會顯示計數標章。
+2. **三態管理**：
+   - **待審查 (Pending)**：系統自動偵測到的潛在關聯。
+   - **已確認 (Confirmed)**：經人工審核為正確並正式套用至 Schema。
+   - **已忽略 (Ignored)**：判定為雜訊或錯誤建議，未來將不再提示。
+3. **即時套用**：在介面點擊「確認」後，關聯線會立即出現在畫布上，並同步更新至 `archivolt.json`。
+
+### 方式 E：批次匯入推斷關係 (CLI 模式)
 
 語義分析產出的推斷關係可以直接匯入為 vFK：
 

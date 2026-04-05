@@ -3,7 +3,10 @@ dist/
 .superpowers/
 archivolt.json
 *.log
+!test/fixtures/**/*.log
 .env
 .env.local
 .vscode/
 .worktrees/
+.playwright-mcp/
+data/
