@@ -63,7 +63,7 @@ function SeverityBar({ counts }: { counts: SeverityCount }) {
           <span>
             <span className="text-slate-500">■</span>{' '}
             <span className="text-text-muted">Fragmented</span>{' '}
-            <strong className="text-muted">{counts.fragmented}</strong>
+            <strong className="text-slate-400">{counts.fragmented}</strong>
           </span>
         )}
       </div>
