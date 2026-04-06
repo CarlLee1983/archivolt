@@ -171,7 +171,7 @@ export function ReportContent({ report }: Props) {
                   <th className="px-4 py-2 text-left font-semibold">資料表</th>
                   <th className="px-4 py-2 text-right font-semibold">讀</th>
                   <th className="px-4 py-2 text-right font-semibold">寫</th>
-                  <th className="px-4 py-2 text-right font-semibold">讀佔比</th>
+                  <th className="px-4 py-2 text-left font-semibold w-24">Ratio</th>
                 </tr>
               </thead>
               <tbody>
@@ -180,11 +180,43 @@ export function ReportContent({ report }: Props) {
                     <td className="px-4 py-2 font-mono">{t.table}</td>
                     <td className="px-4 py-2 text-right text-emerald-400">{t.reads}</td>
                     <td className="px-4 py-2 text-right text-amber-400">{t.writes}</td>
-                    <td className="px-4 py-2 text-right">{Math.round(t.readRatio * 100)}%</td>
+                    <td className="px-4 py-2">
+                      <div className="flex h-1.5 rounded-full overflow-hidden">
+                        <div
+                          className="bg-emerald-500"
+                          style={{ width: `${Math.round(t.readRatio * 100)}%` }}
+                        />
+                        <div
+                          className="bg-amber-500 flex-1"
+                        />
+                      </div>
+                      <p className="text-[9px] text-muted mt-0.5 font-mono">
+                        {Math.round(t.readRatio * 100)}% R
+                      </p>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          </div>
+        </section>
+      )}
+
+      {report.readWriteReport?.suggestions && report.readWriteReport.suggestions.length > 0 && (
+        <section>
+          <h2 className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-3">
+            Suggestions ({report.readWriteReport.suggestions.length})
+          </h2>
+          <div className="space-y-2">
+            {report.readWriteReport.suggestions.map((s, i) => (
+              <FindingCard
+                key={i}
+                severity="blue"
+                title={`${s.table} — ${s.type}`}
+                subtitle={s.reason}
+                sql={s.sql}
+              />
+            ))}
           </div>
         </section>
       )}
