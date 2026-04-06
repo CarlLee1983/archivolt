@@ -1,7 +1,7 @@
 import { useState } from 'react'
 
 interface Props {
-  severity: 'red' | 'orange' | 'yellow'
+  severity: 'red' | 'orange' | 'yellow' | 'blue'
   title: string
   subtitle?: string
   sql?: string
@@ -13,6 +13,7 @@ const severityStyles: Record<Props['severity'], string> = {
   red: 'border-red-500/20 bg-red-500/5 text-red-300 hover:border-red-500/30',
   orange: 'border-orange-500/20 bg-orange-500/5 text-orange-300 hover:border-orange-500/30',
   yellow: 'border-yellow-500/20 bg-yellow-500/5 text-yellow-300 hover:border-yellow-500/30',
+  blue: 'border-blue-500/20 bg-blue-500/5 text-blue-300 hover:border-blue-500/30',
 }
 
 function CopyButton({ text }: { text: string }) {
