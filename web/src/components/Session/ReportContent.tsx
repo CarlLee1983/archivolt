@@ -5,6 +5,72 @@ interface Props {
   report: OptimizationReportJson
 }
 
+interface SeverityCount {
+  n1: number
+  indexGap: number
+  fullScan: number
+  fragmented: number
+}
+
+function SeverityBar({ counts }: { counts: SeverityCount }) {
+  const total = counts.n1 + counts.indexGap + counts.fullScan + counts.fragmented
+  if (total === 0) return null
+
+  return (
+    <div className="border border-border rounded-xl p-4 space-y-2">
+      <p className="text-[9px] font-mono text-text-muted uppercase tracking-widest">
+        Analysis Results
+      </p>
+      {/* proportion bar */}
+      <div className="flex h-1.5 rounded-full overflow-hidden gap-px">
+        {counts.n1 > 0 && (
+          <div className="bg-red-500" style={{ flex: counts.n1 }} />
+        )}
+        {counts.indexGap > 0 && (
+          <div className="bg-orange-400" style={{ flex: counts.indexGap }} />
+        )}
+        {counts.fullScan > 0 && (
+          <div className="bg-yellow-400" style={{ flex: counts.fullScan }} />
+        )}
+        {counts.fragmented > 0 && (
+          <div className="bg-slate-600" style={{ flex: counts.fragmented }} />
+        )}
+      </div>
+      {/* legend */}
+      <div className="flex flex-wrap gap-x-4 gap-y-1 font-mono text-[10px]">
+        {counts.n1 > 0 && (
+          <span>
+            <span className="text-red-400">■</span>{' '}
+            <span className="text-text-muted">N+1</span>{' '}
+            <strong className="text-red-400">{counts.n1}</strong>
+          </span>
+        )}
+        {counts.indexGap > 0 && (
+          <span>
+            <span className="text-orange-400">■</span>{' '}
+            <span className="text-text-muted">Index gaps</span>{' '}
+            <strong className="text-orange-400">{counts.indexGap}</strong>
+          </span>
+        )}
+        {counts.fullScan > 0 && (
+          <span>
+            <span className="text-yellow-400">■</span>{' '}
+            <span className="text-text-muted">Full scans</span>{' '}
+            <strong className="text-yellow-400">{counts.fullScan}</strong>
+          </span>
+        )}
+        {counts.fragmented > 0 && (
+          <span>
+            <span className="text-slate-500">■</span>{' '}
+            <span className="text-text-muted">Fragmented</span>{' '}
+            <strong className="text-muted">{counts.fragmented}</strong>
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export function ReportContent({ report }: Props) {
   const hasFindings =
     (report.n1Findings?.length ?? 0) > 0 ||
@@ -12,8 +78,16 @@ export function ReportContent({ report }: Props) {
     (report.fragmentationFindings?.length ?? 0) > 0 ||
     (report.fullScanFindings?.length ?? 0) > 0
 
+  const severityCounts: SeverityCount = {
+    n1: report.n1Findings?.length ?? 0,
+    indexGap: report.indexGapFindings?.length ?? 0,
+    fullScan: report.fullScanFindings?.length ?? 0,
+    fragmented: report.fragmentationFindings?.length ?? 0,
+  }
+
   return (
     <div className="space-y-8">
+      <SeverityBar counts={severityCounts} />
       {report.n1Findings && report.n1Findings.length > 0 && (
         <section>
           <h2 className="text-[10px] font-bold text-red-400 uppercase tracking-widest mb-3">
