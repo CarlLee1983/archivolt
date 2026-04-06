@@ -23,6 +23,7 @@ function formatTimeRange(startedAt: number, endedAt?: number): string {
 
 function formatDuration(startedAt: number, endedAt: number): string {
   const secs = Math.floor((endedAt - startedAt) / 1000)
+  if (secs < 60) return `${secs}s`
   if (secs < 3600) return `${Math.floor(secs / 60)}m`
   return `${Math.floor(secs / 3600)}h ${Math.floor((secs % 3600) / 60)}m`
 }
@@ -98,7 +99,7 @@ export function SessionHeader({
         </div>
 
         {/* Right: stats grid — 2×2 when endedAt present, 1×2 otherwise */}
-        <div className={`grid gap-1.5 flex-shrink-0 ${duration ? 'grid-cols-2' : 'grid-cols-2'}`}>
+        <div className="grid grid-cols-2 gap-1.5 flex-shrink-0">
           <StatCell label="QUERIES" value={totalQueries.toLocaleString()} color="text-warning" />
           <StatCell label="HTTP" value={`${httpChunkCount}c`} />
           {duration && <StatCell label="DURATION" value={duration} />}
