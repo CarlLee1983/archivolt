@@ -162,8 +162,11 @@ export default function SessionPage() {
             <SessionHeader
               sessionId={session.id}
               startedAt={session.startedAt}
+              endedAt={session.endedAt}
               status={session.status}
               totalQueries={session.stats.totalQueries}
+              httpChunkCount={session.httpChunkCount}
+              byOperation={session.stats.byOperation}
             />
 
             {state.kind === 'idle' && (
